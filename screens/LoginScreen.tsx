@@ -4,6 +4,7 @@ import {
   Image,
   Platform,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -22,7 +23,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 export default function LoginScreen({ navigation }: Props) {
   const { width } = useWindowDimensions();
-  const scrollRef = useRef<Animated.ScrollView>(null);
+  const scrollRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [termsVisible, setTermsVisible] = useState(false);
 
@@ -69,7 +70,14 @@ export default function LoginScreen({ navigation }: Props) {
           contentContainerStyle={[styles.sliderContent, { width: width * 3 }]}
         >
           <View style={[styles.slide, { width }]}>
-            <OnboardingSlide title={'내 꿈으로 향하는\n밀도 있는 플랜 짜기 💪'}>
+            <OnboardingSlide
+              title={
+                <>
+                  내 꿈으로 향하는{'\n'}
+                  <Text style={styles.titleHighlight}>밀도 있는</Text> 플랜 짜기 💪
+                </>
+              }
+            >
               <Image
                 source={require('../assets/Frame_1686560451.png')}
                 resizeMode="contain"
@@ -80,7 +88,14 @@ export default function LoginScreen({ navigation }: Props) {
           </View>
 
           <View style={[styles.slide, { width }]}>
-            <OnboardingSlide title={'중요 계획\n태그부터'}>
+            <OnboardingSlide
+              title={
+                <>
+                  <Text style={styles.titleHighlight}>중요 계획</Text>
+                  {'\n'}태그부터
+                </>
+              }
+            >
               <View style={styles.cardStack}>
                 <View style={styles.cardListContainer}>
                   <View style={styles.cardList}>
@@ -106,7 +121,14 @@ export default function LoginScreen({ navigation }: Props) {
           </View>
 
           <View style={[styles.slide, { width }]}>
-            <OnboardingSlide title={'일간, 주간, 월간\n계획까지 한 번에'}>
+            <OnboardingSlide
+              title={
+                <>
+                  <Text style={styles.titleHighlight}>일간, 주간, 월간</Text>
+                  {'\n'}계획까지 한 번에
+                </>
+              }
+            >
               <Image
                 source={require('../assets/home_png1(DAY).png')}
                 resizeMode="contain"
@@ -191,6 +213,9 @@ const styles = StyleSheet.create({
   mockImage: {
     width: '100%',
     height: 320,
+  },
+  titleHighlight: {
+    color: '#8D8DF5',
   },
   loginArea: {
     paddingHorizontal: 24,

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../types/navigation';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,23 +12,27 @@ export default function SignupScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={22} color="#1F2937" />
+        </TouchableOpacity>
+      </View>
       <View style={styles.container}>
         <Image
-          source={require('../assets/planner_face_icon.png')}
+          source={require('../assets/Frame 1686560458 .png')}
           resizeMode="contain"
           style={styles.faceIcon}
           accessibilityLabel="캐릭터 얼굴"
         />
-        <Text style={styles.title}>플랜님 반가워요!</Text>
-        <Text style={styles.subtitle}>계획 달성, 현재 시작해볼까요?</Text>
+        <Text style={styles.title}>
+          <Text style={styles.titleHighlight}>플래너 </Text>반가워요!
+        </Text>
+        <Text style={styles.subtitle}>계획 달성, 함께 시작해볼까요?</Text>
       </View>
       <View style={styles.footer}>
         <TouchableOpacity style={styles.button} onPress={login} accessibilityRole="button">
           <Text style={styles.buttonText}>시작하기</Text>
         </TouchableOpacity>
-        <Text style={styles.backText} onPress={() => navigation.navigate('Login')} accessibilityRole="button">
-          돌아가기
-        </Text>
       </View>
     </SafeAreaView>
   );
@@ -36,7 +41,17 @@ export default function SignupScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F5F3FF',
+    backgroundColor: '#F0EAFE',
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  backButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   container: {
     flex: 1,
@@ -45,15 +60,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   faceIcon: {
-    width: 120,
-    height: 120,
-    marginBottom: 16,
+    width: 180,
+    height: 180,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     color: '#1F2937',
     textAlign: 'center',
+  },
+  titleHighlight: {
+    color: '#8D8DF5',
   },
   subtitle: {
     marginTop: 8,
@@ -64,7 +82,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingBottom: 28,
   },
   button: {
     height: 52,
@@ -82,13 +100,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
-  },
-  backText: {
-    marginTop: 12,
-    textAlign: 'center',
-    fontSize: 14,
-    color: '#6B7280',
-    textDecorationLine: 'underline',
   },
 });
 
