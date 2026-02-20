@@ -15,7 +15,9 @@ export interface TimePickerWheelProps {
   onChange: (time: Time | null) => void;
   label: string;
   required?: boolean;
-  minTime?: Time | null; // 최소 시간 제한 (마감 시간이 시작 시간보다 빠르지 않도록)
+  minTime?: Time | null;
+  /** BottomSheet 등에서 남는 세로 공간을 채울 때 true */
+  fillHeight?: boolean;
 }
 
 export default function TimePickerWheel({
@@ -24,6 +26,7 @@ export default function TimePickerWheel({
   label,
   required = false,
   minTime = null,
+  fillHeight = false,
 }: TimePickerWheelProps) {
   const hours = generateHours();
   const minutes = generateMinutes();
@@ -91,29 +94,29 @@ export default function TimePickerWheel({
   const hourScrollRef = useRef<ScrollView>(null);
   const minuteScrollRef = useRef<ScrollView>(null);
 
+  const ROW_HEIGHT = 44;
+
   // 초기 스크롤 위치 설정
   useEffect(() => {
     if (value) {
       const hourIndex = hours.indexOf(selectedHour);
       const minuteIndex = minutes.indexOf(selectedMinute);
-      
-      // 약간의 지연 후 스크롤 (렌더링 완료 후)
       setTimeout(() => {
         if (hourIndex !== -1 && hourScrollRef.current) {
           hourScrollRef.current.scrollTo({
-            y: hourIndex * 44,
+            y: hourIndex * ROW_HEIGHT,
             animated: false,
           });
         }
         if (minuteIndex !== -1 && minuteScrollRef.current) {
           minuteScrollRef.current.scrollTo({
-            y: minuteIndex * 44,
+            y: minuteIndex * ROW_HEIGHT,
             animated: false,
           });
         }
       }, 100);
     }
-  }, [value]); // value가 변경될 때만 실행
+  }, [value]);
 
   const renderPickerColumn = (
     items: number[],
@@ -124,18 +127,16 @@ export default function TimePickerWheel({
   ) => {
     return (
       <View style={styles.pickerColumnWrapper}>
-        {/* 중앙 선택 영역 강조 */}
-        <View style={styles.pickerSelectionOverlay} pointerEvents="none" />
         <ScrollView
           ref={scrollRef}
           style={styles.pickerColumn}
           contentContainerStyle={styles.pickerColumnContent}
           showsVerticalScrollIndicator={false}
-          snapToInterval={44}
+          snapToInterval={ROW_HEIGHT}
           decelerationRate="fast"
           onMomentumScrollEnd={(event) => {
             const y = event.nativeEvent.contentOffset.y;
-            const index = Math.round(y / 44);
+            const index = Math.round(y / ROW_HEIGHT);
             if (index >= 0 && index < items.length) {
               onValueChange(items[index]);
             }
@@ -146,12 +147,12 @@ export default function TimePickerWheel({
             return (
               <TouchableOpacity
                 key={item}
-                style={[styles.pickerItem, isSelected && styles.pickerItemSelected]}
+                style={[styles.pickerItem, { height: ROW_HEIGHT }, isSelected && styles.pickerItemSelected]}
                 onPress={() => {
                   const index = items.indexOf(item);
                   onValueChange(item);
                   scrollRef.current?.scrollTo({
-                    y: index * 44,
+                    y: index * ROW_HEIGHT,
                     animated: true,
                   });
                 }}
@@ -216,23 +217,26 @@ export default function TimePickerWheel({
             </TouchableOpacity>
           </View>
 
-          {/* 시/분 선택 */}
-          <View style={styles.wheelContainer}>
-            {renderPickerColumn(
-              hours,
-              selectedHour,
-              handleHourChange,
-              (hour) => `${hour}`,
-              hourScrollRef
-            )}
-            <Text style={styles.timeSeparator}>:</Text>
-            {renderPickerColumn(
-              minutes,
-              selectedMinute,
-              handleMinuteChange,
-              (minute) => `${String(minute).padStart(2, '0')}`,
-              minuteScrollRef
-            )}
+          {/* 시/분 선택: 선택 바는 휠 영역 뒤에만 그려서 휠 숫자 가림 방지 */}
+          <View style={[styles.wheelContainer, fillHeight && styles.wheelContainerFill]}>
+            <View style={[styles.selectionBarBehind, { height: ROW_HEIGHT, marginTop: -ROW_HEIGHT / 2 }]} pointerEvents="none" />
+            <View style={styles.wheelColumnsRow}>
+              {renderPickerColumn(
+                hours,
+                selectedHour,
+                handleHourChange,
+                (hour) => `${hour}`,
+                hourScrollRef
+              )}
+              <Text style={styles.timeSeparator}>:</Text>
+              {renderPickerColumn(
+                minutes,
+                selectedMinute,
+                handleMinuteChange,
+                (minute) => `${String(minute).padStart(2, '0')}`,
+                minuteScrollRef
+              )}
+            </View>
           </View>
         </View>
       </View>
@@ -302,12 +306,35 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
   },
   wheelContainer: {
+    position: 'relative',
     flexDirection: 'row',
     flex: 1,
     height: 200,
     backgroundColor: colors.grayscale.white,
     borderRadius: 10,
     padding: spacing.sm,
+    alignItems: 'center',
+  },
+  wheelContainerFill: {
+    minHeight: 200,
+    height: undefined,
+  },
+  /** 휠 컨테이너 전체 뒤에 하나만 그림 → 휠 숫자 위에 겹치지 않음 */
+  selectionBarBehind: {
+    position: 'absolute',
+    left: spacing.sm,
+    right: spacing.sm,
+    top: '50%',
+    backgroundColor: 'transparent',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: colors.main.sub1,
+    zIndex: 0,
+  },
+  wheelColumnsRow: {
+    flexDirection: 'row',
+    flex: 1,
+    zIndex: 1,
     alignItems: 'center',
   },
   timeSeparator: {
@@ -319,23 +346,11 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
-  pickerSelectionOverlay: {
-    position: 'absolute',
-    top: '50%',
-    left: spacing.xs,
-    right: spacing.xs,
-    height: 44,
-    marginTop: -22,
-    backgroundColor: colors.main.sub1,
-    borderRadius: 8,
-    zIndex: 1,
-    pointerEvents: 'none',
-  },
   pickerColumn: {
     flex: 1,
   },
   pickerColumnContent: {
-    paddingVertical: 78, // 중앙 정렬을 위한 패딩 (200 / 2 - 22)
+    paddingVertical: 56,
     alignItems: 'center',
   },
   pickerItem: {
@@ -344,8 +359,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pickerItemSelected: {
-    backgroundColor: colors.main.sub1,
-    borderRadius: 8,
+    backgroundColor: 'transparent',
   },
   pickerItemText: {
     ...typography.bodyLarge,

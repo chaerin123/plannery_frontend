@@ -16,8 +16,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import OnboardingSlide from '../components/OnboardingSlide';
 import PageIndicator from '../components/PageIndicator';
 import SocialLoginButton from '../components/SocialLoginButton';
-import TagCard from '../components/TagCard';
 import TermsBottomSheet from '../components/TermsBottomSheet';
+import { spacing } from '../src/constants';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -96,26 +96,25 @@ export default function LoginScreen({ navigation }: Props) {
                 </>
               }
             >
-              <View style={styles.cardStack}>
-                <View style={styles.cardListContainer}>
-                  <View style={styles.cardList}>
-                    <TagCard
-                      imageSource={require('../assets/Group 1437256850.png')}
-                      accessibilityLabel="중요 계획 카드 1"
-                      variant="flat"
-                    />
-                    <TagCard
-                      imageSource={require('../assets/Group 1437257004.png')}
-                      accessibilityLabel="중요 계획 카드 2"
-                      variant="flat"
-                    />
-                    <TagCard
-                      imageSource={require('../assets/Group 1437257005.png')}
-                      accessibilityLabel="중요 계획 카드 3"
-                      variant="flat"
-                    />
-                  </View>
-                </View>
+              <View style={[styles.planCardList, { maxWidth: Math.min(width - 48, 328) }]}>
+                <Image
+                  source={require('../assets/Group 1437256850.png')}
+                  resizeMode="contain"
+                  style={styles.planCardImage}
+                  accessibilityLabel="중요 계획 태그 카드 1"
+                />
+                <Image
+                  source={require('../assets/Group 1437257004.png')}
+                  resizeMode="contain"
+                  style={styles.planCardImage}
+                  accessibilityLabel="중요 계획 태그 카드 2"
+                />
+                <Image
+                  source={require('../assets/Group 1437257005.png')}
+                  resizeMode="contain"
+                  style={styles.planCardImage}
+                  accessibilityLabel="중요 계획 태그 카드 3"
+                />
               </View>
             </OnboardingSlide>
           </View>
@@ -189,26 +188,16 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 280,
   },
-  cardStack: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  cardListContainer: {
+  planCardList: {
     width: '100%',
     maxWidth: 328,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    shadowColor: '#111827',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
-    elevation: 3,
+    alignSelf: 'center',
+    paddingHorizontal: spacing.xl,
+    gap: 14,
   },
-  cardList: {
+  planCardImage: {
     width: '100%',
-    gap: 10,
+    height: 88,
   },
   mockImage: {
     width: '100%',

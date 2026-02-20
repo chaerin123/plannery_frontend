@@ -6,8 +6,9 @@ import {
   Modal,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  Platform,
+  useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, typography, fontWeight } from '../src/constants';
 import { Time } from '../utils/timeFormatter';
 import TimeInput from './TimeInput';
@@ -28,6 +29,9 @@ export default function TimePickerBottomSheet({
   onClose,
   onConfirm,
 }: TimePickerBottomSheetProps) {
+  const { height: windowHeight } = useWindowDimensions();
+  const sheetHeight = Math.min(windowHeight * 0.72, 560);
+
   const [tempStartTime, setTempStartTime] = React.useState<Time | null>(startTime);
   const [tempEndTime, setTempEndTime] = React.useState<Time | null>(endTime);
   const [activeField, setActiveField] = React.useState<'start' | 'end'>('start');
@@ -89,7 +93,7 @@ export default function TimePickerBottomSheet({
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-            <View style={styles.bottomSheet}>
+            <View style={[styles.bottomSheet, { height: sheetHeight }]}>
               {/* 헤더 */}
               <View style={styles.header}>
                 <Text style={styles.title}>시간을 설정해주세요.</Text>
@@ -98,11 +102,9 @@ export default function TimePickerBottomSheet({
                 </TouchableOpacity>
               </View>
 
-              {/* 컨텐츠 */}
+              {/* 컨텐츠: flex 1로 남는 공간 채움, overflow 방지 */}
               <View style={styles.content}>
-                {/* 시간 입력 필드 */}
                 <View style={styles.timeInputContainer}>
-                  {/* 시작 시간 필드 */}
                   <TimeInput
                     label="시작 시간"
                     value={tempStartTime}
@@ -110,11 +112,7 @@ export default function TimePickerBottomSheet({
                     onPress={handleStartTimeFieldPress}
                     onClear={handleClearStartTime}
                   />
-
-                  {/* 구분자 */}
                   <Text style={styles.timeSeparator}>~</Text>
-
-                  {/* 마감 시간 필드 */}
                   <TimeInput
                     label="마감 시간"
                     value={tempEndTime}
@@ -124,35 +122,36 @@ export default function TimePickerBottomSheet({
                     onClear={handleClearEndTime}
                   />
                 </View>
-
-                {/* Wheel Picker */}
                 <TimePickerWheel
                   value={currentTime}
                   onChange={setCurrentTime}
                   label=""
                   required={false}
                   minTime={activeField === 'end' ? tempStartTime : null}
+                  fillHeight
                 />
               </View>
 
-              {/* 확인 버튼 */}
-              <TouchableOpacity
-                style={[
-                  styles.confirmButton,
-                  !isConfirmEnabled && styles.confirmButtonDisabled,
-                ]}
-                onPress={handleConfirm}
-                disabled={!isConfirmEnabled}
-              >
-                <Text
+              {/* 확인 버튼: 항상 하단 고정 */}
+              <SafeAreaView style={styles.confirmArea} edges={['bottom']}>
+                <TouchableOpacity
                   style={[
-                    styles.confirmButtonText,
-                    !isConfirmEnabled && styles.confirmButtonTextDisabled,
+                    styles.confirmButton,
+                    !isConfirmEnabled && styles.confirmButtonDisabled,
                   ]}
+                  onPress={handleConfirm}
+                  disabled={!isConfirmEnabled}
                 >
-                  확인
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.confirmButtonText,
+                      !isConfirmEnabled && styles.confirmButtonTextDisabled,
+                    ]}
+                  >
+                    확인
+                  </Text>
+                </TouchableOpacity>
+              </SafeAreaView>
             </View>
           </TouchableWithoutFeedback>
         </View>
@@ -171,7 +170,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.grayscale.white,
     borderTopLeftRadius: spacing.xl,
     borderTopRightRadius: spacing.xl,
-    maxHeight: '90%',
     flexDirection: 'column',
   },
   header: {
@@ -199,8 +197,15 @@ const styles = StyleSheet.create({
     color: colors.grayscale.gray500,
   },
   content: {
+    flex: 1,
+    minHeight: 0,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
+  },
+  confirmArea: {
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
   timeInputContainer: {
     flexDirection: 'row',
@@ -217,9 +222,7 @@ const styles = StyleSheet.create({
   },
   confirmButton: {
     backgroundColor: colors.main.main,
-    marginHorizontal: spacing.base,
-    marginTop: spacing.md,
-    marginBottom: Platform.OS === 'ios' ? spacing['2xl'] : spacing.xl,
+    marginHorizontal: 0,
     paddingVertical: spacing.base,
     borderRadius: spacing.base,
     alignItems: 'center',
