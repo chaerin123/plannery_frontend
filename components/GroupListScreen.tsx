@@ -163,16 +163,17 @@ export default function GroupListScreen({ navigation, route }: Props) {
           <Ionicons name="arrow-back" size={24} color={colors.grayscale.gray900} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>그룹 설정</Text>
-        <TouchableOpacity
-          onPress={handleEditPress}
-          style={styles.editButton}
-        >
-          <Ionicons
-            name={isEditMode ? 'checkmark' : 'pencil-outline'}
-            size={24}
-            color={isEditMode ? colors.main.main : colors.grayscale.gray900}
-          />
-        </TouchableOpacity>
+        {groups.length > 0 ? (
+          <TouchableOpacity onPress={handleEditPress} style={styles.editButton}>
+            <Ionicons
+              name={isEditMode ? 'checkmark' : 'pencil-outline'}
+              size={24}
+              color={isEditMode ? colors.main.main : colors.grayscale.gray900}
+            />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.headerSpacer} />
+        )}
       </View>
 
       {/* 그룹 목록 */}
@@ -293,6 +294,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  headerSpacer: {
+    width: 32,
+    height: 32,
+  },
   listContainer: {
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.lg,
@@ -364,7 +369,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 30,
+    bottom: spacing['5xl'] + spacing.base,
     width: 56,
     height: 56,
     borderRadius: 28,

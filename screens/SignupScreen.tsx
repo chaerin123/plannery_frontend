@@ -18,16 +18,16 @@ export default function SignupScreen({ navigation }: Props) {
         </TouchableOpacity>
       </View>
       <View style={styles.container}>
+        <Text style={styles.title}>
+          <Text style={styles.titleHighlight}>플래너 </Text>반가워요!
+        </Text>
+        <Text style={styles.subtitle}>계획 달성, 함께 시작해볼까요?</Text>
         <Image
           source={require('../assets/Frame 1686560458 .png')}
           resizeMode="contain"
           style={styles.faceIcon}
           accessibilityLabel="캐릭터 얼굴"
         />
-        <Text style={styles.title}>
-          <Text style={styles.titleHighlight}>플래너 </Text>반가워요!
-        </Text>
-        <Text style={styles.subtitle}>계획 달성, 함께 시작해볼까요?</Text>
       </View>
       <View style={styles.footer}>
         <TouchableOpacity style={styles.button} onPress={login} accessibilityRole="button">
@@ -56,29 +56,32 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingHorizontal: 24,
+    paddingTop: 148,
   },
   faceIcon: {
-    width: 180,
-    height: 180,
-    marginBottom: 20,
+    width: 220,
+    height: 220,
+    marginTop: 48,
   },
   title: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 28,
+    fontWeight: '600',
     color: '#1F2937',
     textAlign: 'center',
+    lineHeight: 36,
   },
   titleHighlight: {
     color: '#8D8DF5',
   },
   subtitle: {
     marginTop: 8,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
     color: '#6B7280',
     textAlign: 'center',
+    lineHeight: 20,
   },
   footer: {
     paddingHorizontal: 24,

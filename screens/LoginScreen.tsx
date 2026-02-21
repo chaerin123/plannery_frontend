@@ -13,11 +13,9 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../types/navigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import OnboardingSlide from '../components/OnboardingSlide';
 import PageIndicator from '../components/PageIndicator';
 import SocialLoginButton from '../components/SocialLoginButton';
 import TermsBottomSheet from '../components/TermsBottomSheet';
-import { spacing } from '../src/constants';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -26,6 +24,72 @@ export default function LoginScreen({ navigation }: Props) {
   const scrollRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [termsVisible, setTermsVisible] = useState(false);
+  const slideWidth = Math.max(width - 48, 0);
+
+  const slides = [
+    {
+      titleLines: [
+        <>내 꿈으로 향하는</>,
+        <>
+          <Text style={styles.titleHighlight}>밀도 있는</Text> 플랜 짜기 💪
+        </>,
+      ],
+      content: (
+        <Image
+          source={require('../assets/Frame_1686560451.png')}
+          resizeMode="contain"
+          style={styles.heroImage}
+          accessibilityLabel="온보딩 캐릭터 배경"
+        />
+      ),
+    },
+    {
+      titleLines: [
+        <>
+          <Text style={styles.titleHighlight}>중요 계획</Text>
+        </>,
+        <>태그부터</>,
+      ],
+      content: (
+        <View style={[styles.planCardList, { maxWidth: Math.min(slideWidth, 328) }]}>
+          <Image
+            source={require('../assets/Group 1437256850.png')}
+            resizeMode="contain"
+            style={styles.planCardImage}
+            accessibilityLabel="중요 계획 태그 카드 1"
+          />
+          <Image
+            source={require('../assets/Group 1437257004.png')}
+            resizeMode="contain"
+            style={styles.planCardImage}
+            accessibilityLabel="중요 계획 태그 카드 2"
+          />
+          <Image
+            source={require('../assets/Group 1437257005.png')}
+            resizeMode="contain"
+            style={styles.planCardImage}
+            accessibilityLabel="중요 계획 태그 카드 3"
+          />
+        </View>
+      ),
+    },
+    {
+      titleLines: [
+        <>
+          <Text style={styles.titleHighlight}>일간, 주간, 월간</Text>
+        </>,
+        <>계획까지 한 번에</>,
+      ],
+      content: (
+        <Image
+          source={require('../assets/home_png1(DAY).png')}
+          resizeMode="contain"
+          style={styles.mockImage}
+          accessibilityLabel="서비스 기능 설명 화면"
+        />
+      ),
+    },
+  ];
 
   const saveOnboardingComplete = useCallback(async () => {
     try {
@@ -40,12 +104,12 @@ export default function LoginScreen({ navigation }: Props) {
   }, []);
 
   const handleScrollEnd = (event: { nativeEvent: { contentOffset: { x: number } } }) => {
-    const nextIndex = Math.round(event.nativeEvent.contentOffset.x / width);
+    const nextIndex = Math.round(event.nativeEvent.contentOffset.x / slideWidth);
     setCurrentIndex(nextIndex);
   };
 
   const handleDotPress = (index: number) => {
-    scrollRef.current?.scrollTo({ x: width * index, animated: true });
+    scrollRef.current?.scrollTo({ x: slideWidth * index, animated: true });
     setCurrentIndex(index);
   };
 
@@ -60,87 +124,37 @@ export default function LoginScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Animated.ScrollView
-          ref={scrollRef}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onMomentumScrollEnd={handleScrollEnd}
-          contentContainerStyle={[styles.sliderContent, { width: width * 3 }]}
-        >
-          <View style={[styles.slide, { width }]}>
-            <OnboardingSlide
-              title={
-                <>
-                  내 꿈으로 향하는{'\n'}
-                  <Text style={styles.titleHighlight}>밀도 있는</Text> 플랜 짜기 💪
-                </>
-              }
-            >
-              <Image
-                source={require('../assets/Frame_1686560451.png')}
-                resizeMode="contain"
-                style={styles.heroImage}
-                accessibilityLabel="온보딩 캐릭터 배경"
-              />
-            </OnboardingSlide>
-          </View>
+      <View style={styles.wrapper}>
+        <View style={styles.titleBlock}>
+          {slides[currentIndex].titleLines.map((line, index) => (
+            <Text key={`title-line-${index}`} style={[styles.titleText, index > 0 && styles.titleLineSpacing]}>
+              {line}
+            </Text>
+          ))}
+        </View>
 
-          <View style={[styles.slide, { width }]}>
-            <OnboardingSlide
-              title={
-                <>
-                  <Text style={styles.titleHighlight}>중요 계획</Text>
-                  {'\n'}태그부터
-                </>
-              }
-            >
-              <View style={[styles.planCardList, { maxWidth: Math.min(width - 48, 328) }]}>
-                <Image
-                  source={require('../assets/Group 1437256850.png')}
-                  resizeMode="contain"
-                  style={styles.planCardImage}
-                  accessibilityLabel="중요 계획 태그 카드 1"
-                />
-                <Image
-                  source={require('../assets/Group 1437257004.png')}
-                  resizeMode="contain"
-                  style={styles.planCardImage}
-                  accessibilityLabel="중요 계획 태그 카드 2"
-                />
-                <Image
-                  source={require('../assets/Group 1437257005.png')}
-                  resizeMode="contain"
-                  style={styles.planCardImage}
-                  accessibilityLabel="중요 계획 태그 카드 3"
-                />
+        <View style={styles.character}>
+          <Animated.ScrollView
+            ref={scrollRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={handleScrollEnd}
+            contentContainerStyle={[styles.sliderContent, { width: slideWidth * slides.length }]}
+          >
+            {slides.map((slide, index) => (
+              <View key={`slide-${index}`} style={[styles.slide, { width: slideWidth }]}>
+                {slide.content}
               </View>
-            </OnboardingSlide>
-          </View>
+            ))}
+          </Animated.ScrollView>
+        </View>
 
-          <View style={[styles.slide, { width }]}>
-            <OnboardingSlide
-              title={
-                <>
-                  <Text style={styles.titleHighlight}>일간, 주간, 월간</Text>
-                  {'\n'}계획까지 한 번에
-                </>
-              }
-            >
-              <Image
-                source={require('../assets/home_png1(DAY).png')}
-                resizeMode="contain"
-                style={styles.mockImage}
-                accessibilityLabel="서비스 기능 설명 화면"
-              />
-            </OnboardingSlide>
-          </View>
-        </Animated.ScrollView>
+        <View style={styles.indicator}>
+          <PageIndicator total={slides.length} currentIndex={currentIndex} onDotPress={handleDotPress} />
+        </View>
 
-        <PageIndicator total={3} currentIndex={currentIndex} onDotPress={handleDotPress} />
-
-        <View style={styles.loginArea}>
+        <View style={styles.buttonBlock}>
           <SocialLoginButton
             label="카카오로 시작하기"
             backgroundColor="#FEE500"
@@ -173,16 +187,34 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F3FF',
   },
-  container: {
+  wrapper: {
     flex: 1,
     backgroundColor: '#F5F3FF',
+    paddingHorizontal: 24,
   },
   sliderContent: {
-    alignItems: 'stretch',
+    alignItems: 'center',
   },
   slide: {
-    flex: 1,
-    paddingHorizontal: 12,
+    alignItems: 'center',
+  },
+  titleBlock: {
+    paddingTop: 56,
+  },
+  titleText: {
+    fontSize: 26,
+    fontWeight: '700',
+    textAlign: 'center',
+    color: '#1F2937',
+    lineHeight: 34,
+    letterSpacing: -0.3,
+  },
+  titleLineSpacing: {
+    marginTop: 2,
+  },
+  character: {
+    marginTop: 54,
+    alignItems: 'center',
   },
   heroImage: {
     width: '100%',
@@ -190,10 +222,8 @@ const styles = StyleSheet.create({
   },
   planCardList: {
     width: '100%',
-    maxWidth: 328,
     alignSelf: 'center',
-    paddingHorizontal: spacing.xl,
-    gap: 14,
+    gap: 4,
   },
   planCardImage: {
     width: '100%',
@@ -206,9 +236,11 @@ const styles = StyleSheet.create({
   titleHighlight: {
     color: '#8D8DF5',
   },
-  loginArea: {
-    paddingHorizontal: 24,
-    paddingBottom: 18,
+  indicator: {
+    marginTop: 32,
+  },
+  buttonBlock: {
+    marginTop: 24,
   },
   textButton: {
     marginTop: 8,

@@ -70,7 +70,7 @@ export default function GroupCreateBottomSheet({
   return (
     <>
       <Modal
-        visible={visible}
+        visible={visible && !isColorPickerVisible}
         transparent={true}
         animationType="slide"
         onRequestClose={onClose}

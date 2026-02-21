@@ -3,13 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   ScrollView,
   Modal,
   Pressable,
   TouchableWithoutFeedback,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -153,12 +153,13 @@ export default function HomeScreen({ navigation, route }: Props) {
     viewMode === 'Day' ? '오늘의 계획' : viewMode === 'Week' ? '이번 주 계획' : '이번 달 계획';
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <LinearGradient
         colors={[colors.main.main, colors.main.main2]}
         style={styles.header}
       >
-        <View style={styles.headerTop}>
+        <SafeAreaView edges={['top']} style={styles.headerContent}>
+          <View style={styles.headerTop}>
           <Pressable
             style={styles.dateContainer}
             onPress={() => setIsDatePickerVisible(true)}
@@ -173,9 +174,9 @@ export default function HomeScreen({ navigation, route }: Props) {
           >
             <Ionicons name="notifications-outline" size={22} color={colors.grayscale.white} />
           </Pressable>
-        </View>
+          </View>
 
-        <View style={styles.summaryCard}>
+          <View style={styles.summaryCard}>
           <View style={styles.summaryIconContainer}>
             <Ionicons name="megaphone" size={20} color={colors.grayscale.white} />
           </View>
@@ -190,9 +191,9 @@ export default function HomeScreen({ navigation, route }: Props) {
               <Text style={styles.progressText}>{completionPercent}%</Text>
             </View>
           </View>
-        </View>
+          </View>
 
-        <View style={styles.tabContainer}>
+          <View style={styles.tabContainer}>
           {(['Day', 'Week', 'Month'] as ViewMode[]).map((mode) => (
             <TouchableOpacity
               key={mode}
@@ -209,7 +210,8 @@ export default function HomeScreen({ navigation, route }: Props) {
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
+          </View>
+        </SafeAreaView>
       </LinearGradient>
 
       <View style={styles.contentPanel}>
@@ -427,7 +429,7 @@ export default function HomeScreen({ navigation, route }: Props) {
       >
         <Text style={styles.fabText}>+</Text>
       </Pressable>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -437,6 +439,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.grayscale.white,
   },
   header: {
+    backgroundColor: colors.main.main,
+  },
+  headerContent: {
     paddingTop: spacing.base,
     paddingBottom: spacing.md,
     paddingHorizontal: spacing.base,
@@ -545,12 +550,12 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 0,
   },
   tabText: {
-    ...typography.bodyMedium,
+    ...typography.bodyLarge,
     fontWeight: fontWeight.medium,
     color: colors.grayscale.white,
   },
   tabTextActive: {
-    ...typography.bodyMedium,
+    ...typography.bodyLarge,
     fontWeight: fontWeight.semibold,
     color: colors.grayscale.gray900,
   },

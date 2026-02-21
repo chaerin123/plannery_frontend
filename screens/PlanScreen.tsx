@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   FlatList,
   Modal,
@@ -13,6 +12,7 @@ import {
   Platform,
   UIManager,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -172,7 +172,9 @@ const DUMMY_DATA: Record<ViewMode, AchievementGroup[]> = {
 function AchievementHeader() {
   return (
     <LinearGradient colors={[colors.main.main, colors.main.main2]} style={styles.header}>
-      <Text style={styles.headerTitle}>달성</Text>
+      <SafeAreaView edges={['top']} style={styles.headerContent}>
+        <Text style={styles.headerTitle}>달성</Text>
+      </SafeAreaView>
     </LinearGradient>
   );
 }
@@ -329,7 +331,7 @@ export default function PlanScreen({}: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <AchievementHeader />
       <View style={styles.whitePanel}>
         <View style={styles.tabsWrapper}>
@@ -353,7 +355,7 @@ export default function PlanScreen({}: Props) {
         group={selectedGroup}
         onClose={() => setSelectedGroup(null)}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -363,14 +365,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.grayscale.gray50,
   },
   header: {
-    paddingTop: spacing.lg,
+    backgroundColor: colors.main.main,
+  },
+  headerContent: {
+    paddingTop: spacing['2xl'],
     paddingBottom: spacing.lg,
     paddingHorizontal: spacing.base,
   },
   headerTitle: {
-    ...typography.h2,
+    ...typography.h1,
     color: colors.grayscale.white,
     fontWeight: fontWeight.bold,
+    marginBottom: spacing.lg,
   },
   tabsWrapper: {
     backgroundColor: colors.grayscale.white,

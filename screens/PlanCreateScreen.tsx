@@ -34,8 +34,9 @@ import {
 import { Time, formatTimeRange } from '../utils/timeFormatter';
 import ColorPickerBottomSheet from '../components/ColorPickerBottomSheet';
 import IconPickerBottomSheet from '../components/IconPickerBottomSheet';
-import GroupCreateBottomSheet from '../components/GroupCreateBottomSheet';
 import { Group, GROUP_COLORS } from '../types/group';
+
+const MAX_GROUP_NAME_LENGTH = 10;
 
 type Props = NativeStackScreenProps<MainTabParamList, 'PlanCreate'>;
 
@@ -61,7 +62,7 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
   const [viewMode, setViewMode] = useState<ViewMode>('Day');
   const [planTitle, setPlanTitle] = useState('');
   const [isImportant, setIsImportant] = useState(false);
-  const { addPlan, updatePlan, plans, groups, addGroup, updateGroup } = usePlan();
+  const { addPlan, updatePlan, plans, groups, addGroup, updateGroup, deleteGroup } = usePlan();
   const editingPlan = routePlanId ? plans.find((plan) => plan.id === routePlanId) : null;
   
   // 날짜 상태
@@ -101,10 +102,15 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
   const [isImportanceInfoVisible, setIsImportanceInfoVisible] = useState(false);
   const [isGroupInfoVisible, setIsGroupInfoVisible] = useState(false);
   const [isGroupSheetVisible, setIsGroupSheetVisible] = useState(false);
-  const [isGroupCreateVisible, setIsGroupCreateVisible] = useState(false);
   const [tempSelectedGroupId, setTempSelectedGroupId] = useState<string | null>(null);
   const [isGroupEditMode, setIsGroupEditMode] = useState(false);
-  const [editingGroup, setEditingGroup] = useState<Group | null>(null);
+  const [groupSheetView, setGroupSheetView] = useState<'list' | 'create' | 'color'>('list');
+  const [draftGroupId, setDraftGroupId] = useState<string | null>(null);
+  const [draftGroupName, setDraftGroupName] = useState('');
+  const [draftGroupColor, setDraftGroupColor] = useState<string>(colors.main.main);
+  const [colorPickerTemp, setColorPickerTemp] = useState<string>(colors.main.main);
+  const [deleteTargetGroup, setDeleteTargetGroup] = useState<Group | null>(null);
+  const [isDeleteGroupModalVisible, setIsDeleteGroupModalVisible] = useState(false);
 
   // 날짜 표시 텍스트
   const getDateDisplayText = (): string => {
@@ -300,18 +306,69 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
   const closeGroupSheet = () => {
     setIsGroupSheetVisible(false);
     setIsGroupEditMode(false);
-    setEditingGroup(null);
+    setGroupSheetView('list');
+    setDraftGroupId(null);
   };
 
   const handleGroupPress = () => {
     setTempSelectedGroupId(selectedGroupId);
     setIsGroupEditMode(false);
-    setEditingGroup(null);
+    setGroupSheetView('list');
     setIsGroupSheetVisible(true);
   };
 
   const handleGroupSelect = (groupId: string | null) => {
     setSelectedGroupId(groupId);
+  };
+
+  const startGroupCreate = (group?: Group) => {
+    setDraftGroupId(group?.id ?? null);
+    setDraftGroupName(group?.name ?? '');
+    setDraftGroupColor(group?.color ?? colors.main.main);
+    setGroupSheetView('create');
+  };
+
+  const openColorPicker = () => {
+    setColorPickerTemp(draftGroupColor);
+    setGroupSheetView('color');
+  };
+
+  const handleGroupSave = () => {
+    const trimmed = draftGroupName.trim();
+    if (!trimmed) return;
+    if (draftGroupId) {
+      updateGroup(draftGroupId, trimmed, draftGroupColor);
+    } else {
+      addGroup(trimmed, draftGroupColor);
+    }
+    setGroupSheetView('list');
+    setDraftGroupId(null);
+  };
+
+  const handleGroupDelete = (groupId: string) => {
+    const target = groups.find((group) => group.id === groupId);
+    if (!target) return;
+    setDeleteTargetGroup(target);
+    setIsDeleteGroupModalVisible(true);
+  };
+
+  const handleConfirmDeleteGroup = () => {
+    if (!deleteTargetGroup) return;
+    const groupId = deleteTargetGroup.id;
+    deleteGroup(groupId);
+    setSelectedGroupId((prev) => (prev === groupId ? null : prev));
+    setTempSelectedGroupId((prev) => (prev === groupId ? null : prev));
+    setDraftGroupId((prev) => (prev === groupId ? null : prev));
+    if (groups.length <= 1) {
+      setIsGroupEditMode(false);
+    }
+    setIsDeleteGroupModalVisible(false);
+    setDeleteTargetGroup(null);
+  };
+
+  const handleCancelDeleteGroup = () => {
+    setIsDeleteGroupModalVisible(false);
+    setDeleteTargetGroup(null);
   };
   const handleGroupSheetConfirm = () => {
     if (isGroupEditMode) {
@@ -728,127 +785,286 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
               <View style={styles.groupSheet}>
                 <View style={styles.groupSheetGrabber} />
                 <View style={styles.groupSheetHeader}>
-                  <Text style={styles.groupSheetTitle}>그룹 설정</Text>
-                  <View style={styles.groupSheetActions}>
-                    <TouchableOpacity
-                      style={styles.groupSheetActionButton}
-                      onPress={() => setIsGroupEditMode((prev) => !prev)}
-                    >
-                      <Ionicons
-                        name={isGroupEditMode ? 'checkmark' : 'pencil-outline'}
-                        size={20}
-                        color={isGroupEditMode ? colors.main.main : colors.grayscale.gray700}
-                      />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.groupSheetActionButton}
-                      onPress={closeGroupSheet}
-                    >
-                      <Ionicons name="close" size={20} color={colors.grayscale.gray700} />
-                    </TouchableOpacity>
-                  </View>
+                  {groupSheetView === 'list' ? (
+                    <>
+                      <Text style={styles.groupSheetTitle}>
+                        {isGroupEditMode ? '그룹 수정' : '그룹 설정'}
+                      </Text>
+                      <View style={styles.groupSheetActions}>
+                        {groups.length > 0 && (
+                          <TouchableOpacity
+                            style={styles.groupSheetActionButton}
+                            onPress={() => setIsGroupEditMode((prev) => !prev)}
+                          >
+                            <Ionicons
+                              name={isGroupEditMode ? 'checkmark' : 'create-outline'}
+                              size={20}
+                              color={isGroupEditMode ? colors.main.main : colors.grayscale.gray700}
+                            />
+                          </TouchableOpacity>
+                        )}
+                        <TouchableOpacity
+                          style={styles.groupSheetActionButton}
+                          onPress={closeGroupSheet}
+                        >
+                          <Ionicons name="close" size={20} color={colors.grayscale.gray700} />
+                        </TouchableOpacity>
+                      </View>
+                    </>
+                  ) : (
+                    <View style={styles.groupSheetHeaderRow}>
+                      <TouchableOpacity
+                        style={styles.groupSheetHeaderButton}
+                        onPress={() =>
+                          setGroupSheetView(groupSheetView === 'color' ? 'create' : 'list')
+                        }
+                      >
+                        <Ionicons name="arrow-back" size={20} color={colors.grayscale.gray700} />
+                      </TouchableOpacity>
+                      <Text style={styles.groupSheetTitle}>
+                        {groupSheetView === 'color'
+                          ? '그룹 색상'
+                          : draftGroupId
+                            ? '그룹 수정하기'
+                            : '그룹 생성하기'}
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.groupSheetHeaderButton}
+                        onPress={closeGroupSheet}
+                      >
+                        <Ionicons name="close" size={20} color={colors.grayscale.gray700} />
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
 
-                <ScrollView contentContainerStyle={styles.groupSheetList}>
-                  {groups.length === 0 ? (
-                    <View style={styles.groupSheetEmptyContainer}>
-                      <Text style={styles.groupSheetEmpty}>
-                        생성된 그룹이 없습니다.{'\n'}새로운 그룹을 만들어보세요!
-                      </Text>
-                    </View>
-                  ) : (
-                    groups.map((group) => {
-                      const isSelected = !isGroupEditMode && tempSelectedGroupId === group.id;
-                      return (
-                        <View
-                          key={group.id}
-                          style={[styles.groupSheetItem, isSelected && styles.groupSheetItemSelected]}
-                        >
-                          <TouchableOpacity
-                            style={styles.groupSheetItemContent}
-                            activeOpacity={0.8}
-                            onPress={() => {
-                              if (isGroupEditMode) {
-                                setEditingGroup(group);
-                                setIsGroupCreateVisible(true);
-                                return;
-                              }
-                              setTempSelectedGroupId((prev) =>
-                                prev === group.id ? null : group.id
-                              );
-                            }}
+                {groupSheetView === 'list' && (
+                  <ScrollView contentContainerStyle={styles.groupSheetList}>
+                    {groups.length === 0 ? (
+                      <View style={styles.groupSheetEmptyContainer}>
+                        <Text style={styles.groupSheetEmpty}>
+                          생성된 그룹이 없습니다.{'\n'}새로운 그룹을 만들어보세요!
+                        </Text>
+                      </View>
+                    ) : (
+                      groups.map((group) => {
+                        const isSelected = !isGroupEditMode && tempSelectedGroupId === group.id;
+                        return (
+                          <View
+                            key={group.id}
+                            style={[styles.groupSheetItem, isSelected && styles.groupSheetItemSelected]}
                           >
-                            <View style={[styles.groupSheetColor, { backgroundColor: group.color }]} />
-                            <Text style={styles.groupSheetName}>{group.name}</Text>
-                          </TouchableOpacity>
-                          {isGroupEditMode && (
                             <TouchableOpacity
-                              style={styles.groupSheetItemAction}
+                              style={styles.groupSheetItemContent}
+                              activeOpacity={0.8}
                               onPress={() => {
-                                setEditingGroup(group);
-                                setIsGroupCreateVisible(true);
+                                if (isGroupEditMode) {
+                                  startGroupCreate(group);
+                                  return;
+                                }
+                                setTempSelectedGroupId((prev) =>
+                                  prev === group.id ? null : group.id
+                                );
                               }}
                             >
-                              <Ionicons name="pencil" size={18} color={colors.grayscale.gray700} />
+                              <View style={[styles.groupSheetColor, { backgroundColor: group.color }]} />
+                              <Text style={styles.groupSheetName}>{group.name}</Text>
                             </TouchableOpacity>
+                            {isGroupEditMode && (
+                              <TouchableOpacity
+                                style={styles.groupSheetDeleteButton}
+                                onPress={() => handleGroupDelete(group.id)}
+                              >
+                                <Ionicons name="remove-circle" size={22} color="#EF4444" />
+                              </TouchableOpacity>
+                            )}
+                          </View>
+                        );
+                      })
+                    )}
+                  </ScrollView>
+                )}
+
+                {groupSheetView === 'create' && (
+                  <View style={styles.groupForm}>
+                    <View style={styles.groupFormField}>
+                      <Text style={styles.groupFormLabel}>그룹 이름</Text>
+                      <View style={styles.groupFormInputRow}>
+                        <TextInput
+                          style={styles.groupFormInput}
+                          placeholder="그룹의 이름을 입력하세요."
+                          placeholderTextColor={colors.grayscale.gray500}
+                          value={draftGroupName}
+                          onChangeText={(text) => {
+                            if (text.length <= MAX_GROUP_NAME_LENGTH) {
+                              setDraftGroupName(text);
+                            }
+                          }}
+                        />
+                        <Text style={styles.groupFormCounter}>
+                          {draftGroupName.length}/{MAX_GROUP_NAME_LENGTH}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.groupFormField}>
+                      <Text style={styles.groupFormLabel}>그룹 색상</Text>
+                      <TouchableOpacity style={styles.groupFormColor} onPress={openColorPicker}>
+                        <View style={styles.groupFormColorLeft}>
+                          <Ionicons
+                            name="color-palette-outline"
+                            size={20}
+                            color={colors.grayscale.gray700}
+                          />
+                          <Text style={styles.groupFormColorText}>색상</Text>
+                        </View>
+                        <View style={styles.groupFormColorRight}>
+                          <View
+                            style={[
+                              styles.groupFormColorPreview,
+                              { backgroundColor: draftGroupColor },
+                            ]}
+                          />
+                          <Ionicons name="chevron-forward" size={20} color={colors.grayscale.gray300} />
+                        </View>
+                      </TouchableOpacity>
+                    </View>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.groupFormSubmit,
+                        !draftGroupName.trim() && styles.groupFormSubmitDisabled,
+                      ]}
+                      onPress={handleGroupSave}
+                      disabled={!draftGroupName.trim()}
+                    >
+                      <Text
+                        style={[
+                          styles.groupFormSubmitText,
+                          !draftGroupName.trim() && styles.groupFormSubmitTextDisabled,
+                        ]}
+                      >
+                        {draftGroupId ? '수정하기' : '추가하기'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {groupSheetView === 'color' && (
+                  <View style={styles.groupColor}>
+                    <View style={styles.groupColorGrid}>
+                      {Array.from({ length: 4 }).map((_, rowIndex) => (
+                        <View key={rowIndex} style={styles.groupColorRow}>
+                          {GROUP_COLORS.slice(rowIndex * 5, (rowIndex + 1) * 5).map(
+                            (color, colIndex) => {
+                              const isSelected = colorPickerTemp === color;
+                              return (
+                                <TouchableOpacity
+                                  key={`${rowIndex}-${colIndex}`}
+                                  style={[
+                                    styles.groupColorSwatch,
+                                    isSelected && styles.groupColorSwatchSelected,
+                                    { backgroundColor: color },
+                                    colIndex < 4 && styles.groupColorSwatchMargin,
+                                  ]}
+                                  onPress={() => setColorPickerTemp(color)}
+                                />
+                              );
+                            }
                           )}
                         </View>
-                      );
-                    })
-                  )}
-                </ScrollView>
+                      ))}
+                    </View>
+                    <TouchableOpacity
+                      style={styles.groupColorConfirm}
+                      onPress={() => {
+                        setDraftGroupColor(colorPickerTemp);
+                        setGroupSheetView('create');
+                      }}
+                    >
+                      <Text style={styles.groupColorConfirmText}>확인</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
 
-                <TouchableOpacity
-                  style={styles.groupSheetAdd}
-                  onPress={() => {
-                    setEditingGroup(null);
-                    setIsGroupCreateVisible(true);
-                  }}
-                >
-                  <Ionicons name="add" size={20} color={colors.grayscale.white} />
-                </TouchableOpacity>
+                {groupSheetView === 'list' && (
+                  <>
+                    <TouchableOpacity
+                      style={styles.groupSheetAdd}
+                      onPress={() => startGroupCreate()}
+                    >
+                      <Ionicons name="add" size={20} color={colors.grayscale.white} />
+                    </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={[
-                    styles.groupSheetConfirm,
-                    (!tempSelectedGroupId || isGroupEditMode) && styles.groupSheetConfirmDisabled,
-                  ]}
-                  onPress={handleGroupSheetConfirm}
-                  disabled={!tempSelectedGroupId || isGroupEditMode}
-                >
-                  <Text
-                    style={[
-                      styles.groupSheetConfirmText,
-                      (!tempSelectedGroupId || isGroupEditMode) &&
-                        styles.groupSheetConfirmTextDisabled,
-                    ]}
-                  >
-                    선택하기
-                  </Text>
-                </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.groupSheetConfirm,
+                        (!tempSelectedGroupId || isGroupEditMode) && styles.groupSheetConfirmDisabled,
+                      ]}
+                      onPress={handleGroupSheetConfirm}
+                      disabled={!tempSelectedGroupId || isGroupEditMode}
+                    >
+                      <Text
+                        style={[
+                          styles.groupSheetConfirmText,
+                          (!tempSelectedGroupId || isGroupEditMode) &&
+                            styles.groupSheetConfirmTextDisabled,
+                        ]}
+                      >
+                        선택하기
+                      </Text>
+                    </TouchableOpacity>
+                  </>
+                )}
               </View>
             </TouchableWithoutFeedback>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
 
-      <GroupCreateBottomSheet
-        visible={isGroupCreateVisible}
-        group={editingGroup}
-        onClose={() => {
-          setIsGroupCreateVisible(false);
-          setEditingGroup(null);
-        }}
-        onConfirm={(name, color) => {
-          if (editingGroup) {
-            updateGroup(editingGroup.id, name, color);
-          } else {
-            addGroup(name, color);
-          }
-          setIsGroupCreateVisible(false);
-          setEditingGroup(null);
-        }}
-      />
+      <Modal
+        visible={isDeleteGroupModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCancelDeleteGroup}
+      >
+        <TouchableWithoutFeedback onPress={handleCancelDeleteGroup}>
+          <View style={styles.deleteModalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.deleteModalContainer}>
+                <TouchableOpacity
+                  onPress={handleCancelDeleteGroup}
+                  style={styles.deleteModalClose}
+                >
+                  <Ionicons name="close" size={18} color={colors.grayscale.gray700} />
+                </TouchableOpacity>
+                <Text style={styles.deleteModalTitle}>
+                  {deleteTargetGroup
+                    ? `'${deleteTargetGroup.name}' 그룹이 삭제돼요.`
+                    : '그룹이 삭제돼요.'}
+                </Text>
+                <Text style={styles.deleteModalDescription}>
+                  그룹이 삭제되면 복구할 수 없어요.{'\n'}그래도 삭제하시겠어요?
+                </Text>
+                <View style={styles.deleteModalButtons}>
+                  <TouchableOpacity
+                    style={styles.deleteModalCancel}
+                    onPress={handleCancelDeleteGroup}
+                  >
+                    <Text style={styles.deleteModalCancelText}>취소하기</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.deleteModalConfirm}
+                    onPress={handleConfirmDeleteGroup}
+                  >
+                    <Text style={styles.deleteModalConfirmText}>삭제하기</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1134,6 +1350,18 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.grayscale.gray100,
   },
+  groupSheetHeaderRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  groupSheetHeaderButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   groupSheetTitle: {
     ...typography.bodyLarge,
     fontWeight: fontWeight.semibold,
@@ -1189,11 +1417,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  groupSheetDeleteButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+  },
   groupSheetItemAction: {
     width: 32,
     height: 32,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  groupSheetItemActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   groupSheetColor: {
     width: 20,
@@ -1208,22 +1448,219 @@ const styles = StyleSheet.create({
   groupSheetAdd: {
     position: 'absolute',
     right: spacing.base,
-    bottom: spacing['5xl'],
+    bottom: spacing['5xl'] + spacing['2xl'],
     width: 48,
     height: 48,
     borderRadius: 24,
     backgroundColor: colors.grayscale.gray700,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 10,
     shadowColor: colors.grayscale.gray900,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
   },
+  groupForm: {
+    flex: 1,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.lg,
+  },
+  groupFormField: {
+    marginBottom: spacing.lg,
+  },
+  groupFormLabel: {
+    ...typography.bodyMedium,
+    fontWeight: fontWeight.semibold,
+    color: colors.grayscale.gray900,
+    marginBottom: spacing.sm,
+  },
+  groupFormInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.grayscale.gray200,
+    borderRadius: 10,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.grayscale.white,
+  },
+  groupFormInput: {
+    ...typography.bodyLarge,
+    color: colors.grayscale.gray900,
+    flex: 1,
+  },
+  groupFormCounter: {
+    ...typography.bodySmall,
+    color: colors.grayscale.gray500,
+  },
+  groupFormColor: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: colors.grayscale.gray200,
+    borderRadius: 10,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.base,
+    backgroundColor: colors.grayscale.white,
+  },
+  groupFormColorLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  groupFormColorRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  groupFormColorText: {
+    ...typography.bodyMedium,
+    color: colors.grayscale.gray700,
+  },
+  groupFormColorPreview: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.grayscale.gray200,
+  },
+  groupFormSubmit: {
+    backgroundColor: colors.main.main,
+    marginTop: 'auto',
+    marginHorizontal: 0,
+    marginBottom: spacing.lg,
+    paddingVertical: spacing.base,
+    borderRadius: spacing.base,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  groupFormSubmitDisabled: {
+    backgroundColor: colors.grayscale.gray300,
+  },
+  groupFormSubmitText: {
+    ...typography.bodyLarge,
+    fontWeight: fontWeight.semibold,
+    color: colors.grayscale.white,
+  },
+  groupFormSubmitTextDisabled: {
+    color: colors.grayscale.gray500,
+  },
+  groupColor: {
+    flex: 1,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.lg,
+  },
+  groupColorGrid: {
+    marginBottom: spacing.lg,
+  },
+  groupColorRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  groupColorSwatch: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: colors.grayscale.gray200,
+  },
+  groupColorSwatchSelected: {
+    borderColor: colors.main.main,
+    borderWidth: 3,
+  },
+  groupColorSwatchMargin: {
+    marginRight: spacing.md,
+  },
+  groupColorConfirm: {
+    backgroundColor: colors.main.main,
+    paddingVertical: spacing.base,
+    borderRadius: spacing.base,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  groupColorConfirmText: {
+    ...typography.bodyLarge,
+    fontWeight: fontWeight.semibold,
+    color: colors.grayscale.white,
+  },
+  deleteModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  deleteModalContainer: {
+    width: '100%',
+    backgroundColor: colors.grayscale.white,
+    borderRadius: spacing.lg,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+  },
+  deleteModalClose: {
+    position: 'absolute',
+    top: spacing.md,
+    right: spacing.md,
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteModalTitle: {
+    ...typography.bodyLarge,
+    fontWeight: fontWeight.semibold,
+    color: colors.grayscale.gray900,
+    textAlign: 'center',
+    marginTop: spacing.md,
+  },
+  deleteModalDescription: {
+    ...typography.bodyMedium,
+    color: colors.grayscale.gray700,
+    textAlign: 'center',
+    marginTop: spacing.sm,
+    lineHeight: 22,
+  },
+  deleteModalButtons: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+  },
+  deleteModalCancel: {
+    flex: 1,
+    backgroundColor: colors.grayscale.gray100,
+    borderRadius: spacing.base,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteModalCancelText: {
+    ...typography.bodyMedium,
+    fontWeight: fontWeight.semibold,
+    color: colors.grayscale.gray700,
+  },
+  deleteModalConfirm: {
+    flex: 1,
+    backgroundColor: colors.main.main,
+    borderRadius: spacing.base,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteModalConfirmText: {
+    ...typography.bodyMedium,
+    fontWeight: fontWeight.semibold,
+    color: colors.grayscale.white,
+  },
   groupSheetConfirm: {
     backgroundColor: colors.main.main,
     marginHorizontal: spacing.base,
+    marginTop: 'auto',
+    marginBottom: spacing.lg,
     paddingVertical: spacing.base,
     borderRadius: spacing.base,
     alignItems: 'center',

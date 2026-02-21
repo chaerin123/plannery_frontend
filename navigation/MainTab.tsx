@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, fontWeight } from '../src/constants';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MainTabParamList } from '../types/navigation';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from '../screens/HomeScreen';
 import PlanScreen from '../screens/PlanScreen';
 import MyPageScreen from '../screens/MyPageScreen';
@@ -52,6 +53,8 @@ function MyPageStack() {
 }
 
 export default function MainTab() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -63,9 +66,9 @@ export default function MainTab() {
           fontWeight: fontWeight.semibold,
         },
         tabBarStyle: {
-          height: 64,
+          height: 56 + insets.bottom,
           paddingTop: 8,
-          paddingBottom: 8,
+          paddingBottom: 2 + insets.bottom,
           borderTopWidth: 1,
           borderTopColor: colors.grayscale.gray200,
           backgroundColor: colors.grayscale.white,

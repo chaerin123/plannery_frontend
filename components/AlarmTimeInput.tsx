@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.medium,
   },
   timeText: {
-    ...typography.headingLarge,
+    ...typography.h1,
     fontSize: 48,
     fontWeight: fontWeight.bold,
     color: colors.grayscale.gray900,

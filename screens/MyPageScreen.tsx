@@ -4,12 +4,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
   Image,
   Modal,
   TouchableWithoutFeedback,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -28,13 +28,14 @@ export default function MyPageScreen({ navigation }: Props) {
   const hasGoals = studyGoals.length > 0;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <LinearGradient
           colors={[colors.main.main, colors.main.main2]}
           style={styles.header}
         >
-          <View style={styles.profileHeader}>
+          <SafeAreaView edges={['top']} style={styles.headerContent}>
+            <View style={styles.profileHeader}>
             <TouchableOpacity
               style={styles.profileEditButton}
               onPress={() => navigation.navigate('ProfileEdit')}
@@ -50,9 +51,9 @@ export default function MyPageScreen({ navigation }: Props) {
             <Text style={styles.profileSubText}>
               오늘도 공부 목표를 향해 화이팅! 💪
             </Text>
-          </View>
+            </View>
 
-          <View style={styles.badgeRow}>
+            <View style={styles.badgeRow}>
             {hasGoals ? (
               studyGoals.map((label) => (
                 <View key={label} style={styles.badge}>
@@ -64,7 +65,8 @@ export default function MyPageScreen({ navigation }: Props) {
                 <Text style={styles.badgeText}>공부 목표를 설정해주세요!</Text>
               </View>
             )}
-          </View>
+            </View>
+          </SafeAreaView>
         </LinearGradient>
 
         <View style={styles.section}>
@@ -187,7 +189,7 @@ export default function MyPageScreen({ navigation }: Props) {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -200,6 +202,9 @@ const styles = StyleSheet.create({
     paddingBottom: spacing['2xl'],
   },
   header: {
+    backgroundColor: colors.main.main,
+  },
+  headerContent: {
     paddingTop: spacing.lg,
     paddingHorizontal: spacing.base,
     paddingBottom: spacing.lg,
