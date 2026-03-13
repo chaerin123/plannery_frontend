@@ -19,7 +19,7 @@ export const colors = {
 
   // Main Color Palette
   main: {
-    main: '#8D8DF5',
+    main: '#BE81F9',
     main2: '#D8AEE3',
     sub1: '#E6E6FA',
     sub2: '#F0E8FF',

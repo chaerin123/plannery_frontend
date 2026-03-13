@@ -261,8 +261,8 @@ const styles = StyleSheet.create({
   },
   pickerContainer: {
     backgroundColor: colors.grayscale.gray50,
-    borderRadius: 10,
-    padding: spacing.base,
+    borderRadius: 12,
+    padding: spacing.sm,
   },
   timePickerRow: {
     flexDirection: 'row',
@@ -271,9 +271,9 @@ const styles = StyleSheet.create({
   periodContainer: {
     flexDirection: 'column',
     backgroundColor: colors.grayscale.white,
-    borderRadius: 8,
+    borderRadius: 10,
     padding: 4,
-    minWidth: 80,
+    minWidth: 72,
     marginRight: spacing.md,
   },
   periodButton: {
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.grayscale.white,
     shadowColor: colors.grayscale.gray900,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 2,
     elevation: 2,
   },
@@ -309,9 +309,9 @@ const styles = StyleSheet.create({
     position: 'relative',
     flexDirection: 'row',
     flex: 1,
-    height: 200,
+    height: 180,
     backgroundColor: colors.grayscale.white,
-    borderRadius: 10,
+    borderRadius: 12,
     padding: spacing.sm,
     alignItems: 'center',
   },
@@ -325,10 +325,11 @@ const styles = StyleSheet.create({
     left: spacing.sm,
     right: spacing.sm,
     top: '50%',
-    backgroundColor: 'transparent',
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: colors.main.sub1,
+    height: 44,
+    marginTop: -22,
+    backgroundColor: colors.main.sub1,
+    borderRadius: 10,
+    opacity: 0.45,
     zIndex: 0,
   },
   wheelColumnsRow: {
@@ -339,7 +340,7 @@ const styles = StyleSheet.create({
   },
   timeSeparator: {
     ...typography.headingLarge,
-    color: colors.grayscale.gray900,
+    color: colors.grayscale.gray600,
     marginHorizontal: spacing.xs,
   },
   pickerColumnWrapper: {
@@ -350,7 +351,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pickerColumnContent: {
-    paddingVertical: 56,
+    paddingVertical: 48,
     alignItems: 'center',
   },
   pickerItem: {
@@ -363,7 +364,7 @@ const styles = StyleSheet.create({
   },
   pickerItemText: {
     ...typography.bodyLarge,
-    color: colors.grayscale.gray500,
+    color: colors.grayscale.gray400,
   },
   pickerItemTextSelected: {
     color: colors.grayscale.gray900,

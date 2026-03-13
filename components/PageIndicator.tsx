@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { colors } from '../src/constants';
 
 interface PageIndicatorProps {
   total: number;
@@ -42,7 +43,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   activeDot: {
-    backgroundColor: '#A78BFA',
+    backgroundColor: colors.main.main,
   },
   inactiveDot: {
     backgroundColor: '#D1D5DB',

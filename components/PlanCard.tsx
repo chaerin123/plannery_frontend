@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography, fontWeight } from '../src/constants';
 
@@ -35,20 +35,26 @@ export default function PlanCard({
       <View style={styles.content} collapsable={false}>
         <View style={styles.leftSection} collapsable={false}>
           {/* 아이콘 */}
-          <TouchableOpacity
-            style={[styles.icon, isDone ? styles.iconDone : styles.iconTodo]}
-            onPress={onStatusToggle}
-            activeOpacity={0.7}
-          >
-            {isDone && <Ionicons name="checkmark" size={14} color={colors.grayscale.white} />}
+          <TouchableOpacity style={styles.iconButton} onPress={onStatusToggle} activeOpacity={0.7}>
+            <Image
+              source={
+                isDone
+                  ? require('../assets/체크박스Group 1437256896.png')
+                  : require('../assets/체크박스Group 1437256897.png')
+              }
+              style={styles.iconImage}
+              resizeMode="contain"
+            />
           </TouchableOpacity>
 
           {/* 텍스트 영역 */}
           <View style={styles.textSection} collapsable={false}>
             {isImportant && (
-              <View style={styles.importantTag}>
-                <Text style={styles.importantText}>중요</Text>
-              </View>
+              <Image
+                source={require('../assets/중요1686560433.png')}
+                style={styles.importantTagImage}
+                resizeMode="contain"
+              />
             )}
             <Text
               style={[styles.title, isDone ? styles.titleDone : null]}
@@ -79,6 +85,8 @@ const styles = StyleSheet.create({
     borderRadius: 10, // iOS 스타일 - 더 둥근 모서리
     marginBottom: spacing.sm,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.grayscale.gray100,
     elevation: 2,
     shadowColor: colors.grayscale.gray900,
     shadowOffset: {
@@ -89,7 +97,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   colorBar: {
-    width: 4,
+    width: 16,
     backgroundColor: colors.main.main,
   },
   content: {
@@ -104,35 +112,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  icon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  iconButton: {
+    width: 28,
+    height: 28,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.md,
   },
-  iconDone: {
-    backgroundColor: colors.main.main,
-  },
-  iconTodo: {
-    backgroundColor: colors.grayscale.gray200,
+  iconImage: {
+    width: 24,
+    height: 24,
   },
   textSection: {
     flex: 1,
     gap: spacing.xs,
   },
-  importantTag: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: spacing.base,
-    backgroundColor: colors.main.sub1,
-  },
-  importantText: {
-    ...typography.bodySmall,
-    fontWeight: fontWeight.semibold,
-    color: colors.main.main,
+  importantTagImage: {
+    width: 34,
+    height: 18,
   },
   title: {
     ...typography.bodyLarge,

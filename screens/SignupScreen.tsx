@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../types/navigation';
 import { useAuth } from '../contexts/AuthContext';
+import { colors } from '../src/constants';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Signup'>;
 
@@ -73,7 +74,7 @@ const styles = StyleSheet.create({
     lineHeight: 36,
   },
   titleHighlight: {
-    color: '#8D8DF5',
+    color: colors.main.main,
   },
   subtitle: {
     marginTop: 8,
@@ -90,7 +91,7 @@ const styles = StyleSheet.create({
   button: {
     height: 52,
     borderRadius: 14,
-    backgroundColor: '#A78BFA',
+    backgroundColor: colors.main.main,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#111827',

@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.grayscale.gray50,
+    backgroundColor: colors.grayscale.white,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.grayscale.gray200,
@@ -84,7 +84,6 @@ const styles = StyleSheet.create({
   inputFieldActive: {
     borderColor: colors.main.main,
     borderWidth: 2,
-    backgroundColor: colors.grayscale.white,
   },
   inputText: {
     ...typography.bodyLarge,

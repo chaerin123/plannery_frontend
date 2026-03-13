@@ -200,7 +200,8 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 0,
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
   confirmArea: {
     paddingHorizontal: spacing.base,
@@ -210,7 +211,7 @@ const styles = StyleSheet.create({
   timeInputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.md,
   },
   timeSeparator: {
     ...typography.bodyLarge,
@@ -224,6 +225,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.main.main,
     marginHorizontal: 0,
     paddingVertical: spacing.base,
+    minHeight: 52,
     borderRadius: spacing.base,
     alignItems: 'center',
     justifyContent: 'center',

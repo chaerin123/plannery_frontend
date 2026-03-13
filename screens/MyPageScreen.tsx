@@ -22,7 +22,7 @@ type Props = NativeStackScreenProps<MainTabParamList, 'MyPage'>;
 
 export default function MyPageScreen({ navigation }: Props) {
   const { logout } = useAuth();
-  const { nickname, studyGoals } = useProfile();
+  const { nickname, studyGoals, profileImageUri } = useProfile();
   const [isWithdrawModalVisible, setIsWithdrawModalVisible] = React.useState(false);
   const [infoModalType, setInfoModalType] = React.useState<'terms' | 'privacy' | null>(null);
   const hasGoals = studyGoals.length > 0;
@@ -36,21 +36,25 @@ export default function MyPageScreen({ navigation }: Props) {
         >
           <SafeAreaView edges={['top']} style={styles.headerContent}>
             <View style={styles.profileHeader}>
-            <TouchableOpacity
-              style={styles.profileEditButton}
-              onPress={() => navigation.navigate('ProfileEdit')}
-            >
-              <Text style={styles.profileEditText}>프로필 편집</Text>
-              <Ionicons name="chevron-forward" size={14} color={colors.grayscale.white} />
-            </TouchableOpacity>
-            <Image
-              source={require('../assets/planner_face_icon.png')}
-              style={styles.profileImage}
-            />
-            <Text style={styles.profileName}>{nickname} 님</Text>
-            <Text style={styles.profileSubText}>
-              오늘도 공부 목표를 향해 화이팅! 💪
-            </Text>
+              <TouchableOpacity
+                style={styles.profileEditButton}
+                onPress={() => navigation.navigate('ProfileEdit')}
+              >
+                <Text style={styles.profileEditText}>프로필 편집</Text>
+                <Ionicons name="chevron-forward" size={14} color={colors.grayscale.white} />
+              </TouchableOpacity>
+              <Image
+                source={
+                  profileImageUri
+                    ? { uri: profileImageUri }
+                    : require('../assets/planner_face_icon.png')
+                }
+                style={styles.profileImage}
+              />
+              <Text style={styles.profileName}>{nickname} 님</Text>
+              <Text style={styles.profileSubText}>
+                오늘도 공부 목표를 향해 화이팅! 💪
+              </Text>
             </View>
 
             <View style={styles.badgeRow}>
@@ -205,27 +209,30 @@ const styles = StyleSheet.create({
     backgroundColor: colors.main.main,
   },
   headerContent: {
-    paddingTop: spacing.lg,
+    paddingTop: spacing.xl,
     paddingHorizontal: spacing.base,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing['2xl'],
+    minHeight: 260,
   },
   profileHeader: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.base,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
   },
   profileImage: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: colors.grayscale.white,
+    borderWidth: 2,
+    borderColor: colors.grayscale.white,
   },
   profileName: {
-    ...typography.bodyLarge,
-    fontWeight: fontWeight.semibold,
+    ...typography.h3,
+    fontWeight: fontWeight.bold,
     color: colors.grayscale.white,
-    marginTop: spacing.sm,
+    marginTop: spacing.base,
     textAlign: 'center',
   },
   profileSubText: {
@@ -240,7 +247,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     position: 'absolute',
     right: 0,
-    top: 0,
+    top: spacing.sm,
   },
   profileEditText: {
     ...typography.bodySmall,
@@ -250,17 +257,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
-    marginTop: spacing.base,
+    marginTop: spacing.lg,
     justifyContent: 'center',
   },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    borderRadius: spacing.lg,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
   },
   badgeText: {
     ...typography.bodySmall,

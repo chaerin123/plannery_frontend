@@ -14,7 +14,7 @@ export const GROUP_COLORS = [
   '#FFC93C', // Yellow
   '#6BCB77', // Green
   '#4D96FF', // Blue
-  '#8D8DF5', // Purple (main)
+  '#BE81F9', // Purple (main)
   '#FF6B9D', // Pink
   '#C44569', // Dark Pink
   '#A8E6CF', // Light Green

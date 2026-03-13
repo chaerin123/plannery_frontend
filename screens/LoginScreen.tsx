@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import PageIndicator from '../components/PageIndicator';
 import SocialLoginButton from '../components/SocialLoginButton';
 import TermsBottomSheet from '../components/TermsBottomSheet';
+import { colors } from '../src/constants';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -234,7 +235,7 @@ const styles = StyleSheet.create({
     height: 320,
   },
   titleHighlight: {
-    color: '#8D8DF5',
+    color: colors.main.main,
   },
   indicator: {
     marginTop: 32,

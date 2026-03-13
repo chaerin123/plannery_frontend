@@ -11,6 +11,7 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -238,13 +239,21 @@ function DateNavigator({
 function AchievementItemRow({ item }: { item: AchievementItem }) {
   return (
     <View style={styles.itemRow}>
-      <View style={[styles.checkIcon, item.isDone ? styles.checkDone : styles.checkTodo]}>
-        {item.isDone && <Ionicons name="checkmark" size={14} color={colors.grayscale.white} />}
-      </View>
+      <Image
+        source={
+          item.isDone
+            ? require('../assets/체크박스Group 1437256896.png')
+            : require('../assets/체크박스Group 1437256897.png')
+        }
+        style={styles.checkIcon}
+        resizeMode="contain"
+      />
       {item.isImportant && (
-        <View style={styles.importantBadge}>
-          <Text style={styles.importantBadgeText}>중요</Text>
-        </View>
+        <Image
+          source={require('../assets/중요1686560433.png')}
+          style={styles.importantBadge}
+          resizeMode="contain"
+        />
       )}
       <Text style={styles.itemText} numberOfLines={1}>
         {item.title}
@@ -480,26 +489,10 @@ const styles = StyleSheet.create({
   checkIcon: {
     width: 24,
     height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkDone: {
-    backgroundColor: colors.main.main,
-  },
-  checkTodo: {
-    backgroundColor: colors.grayscale.gray200,
   },
   importantBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: spacing.base,
-    backgroundColor: colors.main.sub1,
-  },
-  importantBadgeText: {
-    ...typography.bodySmall,
-    color: colors.main.main,
-    fontWeight: fontWeight.semibold,
+    width: 34,
+    height: 18,
   },
   modalOverlay: {
     flex: 1,

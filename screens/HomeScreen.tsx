@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from '../types/navigation';
 import { colors, spacing, typography, fontWeight } from '../src/constants';
+import CalendarIcon from '../assets/calender_icon.svg';
 import PlanCard from '../components/PlanCard';
 import { usePlan, PlanType } from '../contexts/PlanContext';
 import DatePickerBottomSheet from '../components/DatePickerBottomSheet';
@@ -170,7 +171,7 @@ export default function HomeScreen({ navigation, route }: Props) {
           </Pressable>
           <Pressable
             style={styles.notificationButton}
-            onPress={() => console.log('알림 아이콘 클릭')}
+            onPress={() => navigation.navigate('Notification')}
           >
             <Ionicons name="notifications-outline" size={22} color={colors.grayscale.white} />
           </Pressable>
@@ -194,90 +195,119 @@ export default function HomeScreen({ navigation, route }: Props) {
           </View>
 
           <View style={styles.tabContainer}>
-          {(['Day', 'Week', 'Month'] as ViewMode[]).map((mode) => (
-            <TouchableOpacity
-              key={mode}
-              style={[styles.tab, viewMode === mode && styles.tabActive]}
-              onPress={() => setViewMode(mode)}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  viewMode === mode && styles.tabTextActive,
-                ]}
+            {(['Day', 'Week', 'Month'] as ViewMode[]).map((mode) => (
+              <TouchableOpacity
+                key={mode}
+                style={[styles.tab, viewMode === mode && styles.tabActive]}
+                onPress={() => setViewMode(mode)}
               >
-                {mode === 'Day' ? 'Day' : mode === 'Week' ? 'Week' : 'Month'}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[
+                    styles.tabText,
+                    viewMode === mode && styles.tabTextActive,
+                  ]}
+                >
+                  {mode === 'Day' ? 'Day' : mode === 'Week' ? 'Week' : 'Month'}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </SafeAreaView>
       </LinearGradient>
 
       <View style={styles.contentPanel}>
         <View style={styles.filterSection}>
-          <View style={styles.filterHeaderRow}>
-            <Pressable
-              style={styles.sortButton}
-              onPress={() => setIsSortMenuVisible(true)}
+          <View style={styles.filterBar}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.groupFilterRow}
             >
-              <Ionicons name="swap-vertical" size={14} color={colors.grayscale.gray700} />
-              <Text style={styles.sortText}>
-                {sortOption === 'time' ? '시간순' : '중요도순'}
-              </Text>
-              <Ionicons name="chevron-down" size={14} color={colors.grayscale.gray500} />
-            </Pressable>
-          </View>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.groupFilterRow}
-          >
-            <Pressable
-              style={[
-                styles.statusChip,
-                !selectedGroupId && styles.statusChipActive,
-              ]}
-              onPress={() => setSelectedGroupId(null)}
-            >
-              <Text
-                style={[
-                  styles.statusChipText,
-                  !selectedGroupId && styles.statusChipTextActive,
-                ]}
-              >
-                전체
-              </Text>
-            </Pressable>
-            {groups.map((group) => (
               <Pressable
-                key={group.id}
                 style={[
                   styles.statusChip,
-                  selectedGroupId === group.id && styles.statusChipActive,
+                  !selectedGroupId && styles.statusChipActive,
                 ]}
-                onPress={() => setSelectedGroupId(group.id)}
+                onPress={() => setSelectedGroupId(null)}
               >
-                <View style={[styles.groupDot, { backgroundColor: group.color }]} />
                 <Text
                   style={[
                     styles.statusChipText,
-                    selectedGroupId === group.id && styles.statusChipTextActive,
+                    !selectedGroupId && styles.statusChipTextActive,
                   ]}
                 >
-                  {group.name}
+                  전체
                 </Text>
               </Pressable>
-            ))}
-          </ScrollView>
+              {groups.map((group) => (
+                <Pressable
+                  key={group.id}
+                  style={[
+                    styles.statusChip,
+                    selectedGroupId === group.id && styles.statusChipActive,
+                  ]}
+                  onPress={() => setSelectedGroupId(group.id)}
+                >
+                  <Text
+                    style={[
+                      styles.statusChipText,
+                      selectedGroupId === group.id && styles.statusChipTextActive,
+                    ]}
+                  >
+                    {group.name}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+            <View style={styles.sortDropdown}>
+              <Pressable
+                style={[
+                  styles.sortButton,
+                  isSortMenuVisible && styles.sortButtonExpanded,
+                ]}
+                onPress={() => setIsSortMenuVisible((prev) => !prev)}
+              >
+                <Ionicons name="swap-vertical" size={14} color={colors.grayscale.gray700} />
+                <Text style={styles.sortText}>
+                  {sortOption === 'time' ? '시간순' : '중요도순'}
+                </Text>
+                <Ionicons
+                  name={isSortMenuVisible ? 'chevron-up' : 'chevron-down'}
+                  size={14}
+                  color={colors.grayscale.gray500}
+                />
+              </Pressable>
+              {isSortMenuVisible && (
+                <View style={styles.sortDropdownMenu}>
+                  <Pressable
+                    style={styles.sortDropdownItem}
+                    onPress={() => {
+                      setSortOption('time');
+                      setIsSortMenuVisible(false);
+                    }}
+                  >
+                    <Text style={styles.sortDropdownText}>시간순</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.sortDropdownItem}
+                    onPress={() => {
+                      setSortOption('important');
+                      setIsSortMenuVisible(false);
+                    }}
+                  >
+                    <Text style={styles.sortDropdownText}>중요도순</Text>
+                  </Pressable>
+                </View>
+              )}
+            </View>
+          </View>
         </View>
 
         <View style={styles.listContainer}>
           <ScrollView style={styles.listContent}>
           {filteredPlans.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons name="calendar-outline" size={32} color={colors.main.main2} />
+              <CalendarIcon width={32} height={32} />
               <Text style={styles.emptyText}>아직 계획이 없습니다.</Text>
             </View>
           ) : (
@@ -349,37 +379,6 @@ export default function HomeScreen({ navigation, route }: Props) {
         />
       </DatePickerBottomSheet>
 
-      <Modal
-        visible={isSortMenuVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setIsSortMenuVisible(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setIsSortMenuVisible(false)}>
-          <TouchableWithoutFeedback>
-            <View style={styles.sortMenu}>
-              <Pressable
-                style={styles.sortMenuItem}
-                onPress={() => {
-                  setSortOption('time');
-                  setIsSortMenuVisible(false);
-                }}
-              >
-                <Text style={styles.sortMenuText}>시간순</Text>
-              </Pressable>
-              <Pressable
-                style={styles.sortMenuItem}
-                onPress={() => {
-                  setSortOption('important');
-                  setIsSortMenuVisible(false);
-                }}
-              >
-                <Text style={styles.sortMenuText}>중요도순</Text>
-              </Pressable>
-            </View>
-          </TouchableWithoutFeedback>
-        </Pressable>
-      </Modal>
 
       <Modal
         visible={isDeleteModalVisible}
@@ -393,10 +392,19 @@ export default function HomeScreen({ navigation, route }: Props) {
         >
           <TouchableWithoutFeedback>
             <View style={styles.deleteModal}>
-              <Text style={styles.deleteModalTitle}>
+              <View style={styles.deleteModalHeader}>
+                <Text style={styles.deleteModalTitle}>계획 삭제</Text>
+                <Pressable
+                  style={styles.deleteModalClose}
+                  onPress={() => setIsDeleteModalVisible(false)}
+                >
+                  <Ionicons name="close" size={18} color={colors.grayscale.gray500} />
+                </Pressable>
+              </View>
+              <Text style={styles.deleteModalMessage}>
                 {deleteTargetId
-                  ? `${plans.find((plan) => plan.id === deleteTargetId)?.title ?? ''} 계획을 삭제할까요?`
-                  : '계획을 삭제할까요?'}
+                  ? `“${plans.find((plan) => plan.id === deleteTargetId)?.title ?? ''}” 계획을\n삭제할까요?`
+                  : '계획을\n삭제할까요?'}
               </Text>
               <View style={styles.deleteModalButtons}>
                 <Pressable
@@ -526,7 +534,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: 'transparent',
     borderRadius: spacing.lg,
-    paddingHorizontal: spacing.base,
+    paddingHorizontal: 0,
+    marginHorizontal: spacing.base,
     marginTop: spacing.md,
     marginBottom: 0,
     justifyContent: 'space-between',
@@ -535,7 +544,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: spacing.md,
     alignItems: 'center',
-    borderRadius: spacing.lg,
+    borderTopLeftRadius: spacing.lg,
+    borderTopRightRadius: spacing.lg,
     backgroundColor: 'transparent',
     borderWidth: 0,
   },
@@ -574,40 +584,44 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
   },
-  filterHeaderRow: {
+  filterBar: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginBottom: spacing.sm,
+    alignItems: 'flex-start',
+    gap: spacing.sm,
   },
   groupFilterRow: {
     alignItems: 'center',
     gap: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  groupDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    paddingVertical: 0,
+    paddingRight: spacing.sm,
   },
   statusChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: spacing.base,
-    backgroundColor: colors.grayscale.gray100,
+    paddingVertical: 2,
+    minHeight: 24,
+    borderRadius: 999,
+    backgroundColor: colors.grayscale.white,
+    borderWidth: 1,
+    borderColor: colors.grayscale.gray300,
   },
   statusChipActive: {
-    backgroundColor: colors.main.sub1,
+    backgroundColor: colors.grayscale.gray500,
+    borderColor: colors.grayscale.gray700,
+    shadowColor: colors.grayscale.gray900,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   statusChipText: {
     ...typography.bodySmall,
     color: colors.grayscale.gray700,
   },
   statusChipTextActive: {
-    color: colors.main.main,
+    color: colors.grayscale.white,
     fontWeight: fontWeight.semibold,
   },
   sortButton: {
@@ -615,14 +629,54 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: spacing.base,
-    backgroundColor: colors.grayscale.gray100,
+    paddingVertical: 2,
+    flexShrink: 0,
+    borderRadius: 8,
+    backgroundColor: colors.grayscale.white,
+    borderWidth: 1,
+    borderColor: colors.grayscale.gray300,
   },
   sortText: {
     ...typography.bodySmall,
     color: colors.grayscale.gray700,
     fontWeight: fontWeight.semibold,
+  },
+  sortDropdown: {
+    alignItems: 'stretch',
+    position: 'relative',
+    zIndex: 5,
+  },
+  sortButtonExpanded: {
+    shadowColor: colors.grayscale.gray900,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  sortDropdownMenu: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    marginTop: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.grayscale.gray300,
+    backgroundColor: colors.grayscale.white,
+    overflow: 'hidden',
+    shadowColor: colors.grayscale.gray900,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  sortDropdownItem: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  sortDropdownText: {
+    ...typography.bodySmall,
+    color: colors.grayscale.gray700,
   },
   listContainer: {
     flex: 1,
@@ -714,30 +768,35 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     paddingHorizontal: spacing.lg,
   },
-  sortMenu: {
-    width: '100%',
-    backgroundColor: colors.grayscale.white,
-    borderRadius: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  sortMenuItem: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-  },
-  sortMenuText: {
-    ...typography.bodyMedium,
-    color: colors.grayscale.gray700,
-  },
   deleteModal: {
     width: '100%',
     backgroundColor: colors.grayscale.white,
     borderRadius: spacing.lg,
     padding: spacing.lg,
   },
+  deleteModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
   deleteModalTitle: {
     ...typography.bodyLarge,
     fontWeight: fontWeight.semibold,
     color: colors.grayscale.gray900,
+    textAlign: 'center',
+  },
+  deleteModalClose: {
+    position: 'absolute',
+    right: 0,
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteModalMessage: {
+    ...typography.bodyMedium,
+    color: colors.grayscale.gray700,
     textAlign: 'center',
     marginBottom: spacing.lg,
   },

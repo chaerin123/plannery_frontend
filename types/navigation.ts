@@ -9,6 +9,7 @@ export type MainTabParamList = {
     | undefined;
   Plan: undefined;
   MyPage: undefined;
+  Notification: undefined;
   PlanCreate:
     | { type?: 'DAY' | 'WEEK' | 'MONTH'; selectedGroupId?: string | null; planId?: string }
     | undefined;

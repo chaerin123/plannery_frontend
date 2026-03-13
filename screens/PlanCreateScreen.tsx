@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -51,6 +51,7 @@ const planTypeToViewMode = (type: PlanType): ViewMode => {
 };
 
 export default function PlanCreateScreen({ navigation, route }: Props) {
+  const scrollViewRef = useRef<ScrollView | null>(null);
   // route params에서 선택된 그룹 ID 가져오기
   const routeParams = route.params as
     | { selectedGroupId?: string | null; planId?: string }
@@ -61,6 +62,15 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
   // 상태값
   const [viewMode, setViewMode] = useState<ViewMode>('Day');
   const [planTitle, setPlanTitle] = useState('');
+  const [isPlanTitleTouched, setIsPlanTitleTouched] = useState(false);
+  const [isTimeTouched, setIsTimeTouched] = useState(false);
+  const [isRepeatTouched, setIsRepeatTouched] = useState(false);
+  const [errorField, setErrorField] = useState<'title' | 'time' | 'repeat' | null>(null);
+  const [fieldPositions, setFieldPositions] = useState<{
+    titleY?: number;
+    timeY?: number;
+    repeatY?: number;
+  }>({});
   const [isImportant, setIsImportant] = useState(false);
   const { addPlan, updatePlan, plans, groups, addGroup, updateGroup, deleteGroup } = usePlan();
   const editingPlan = routePlanId ? plans.find((plan) => plan.id === routePlanId) : null;
@@ -249,6 +259,7 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
   };
 
   const handleTimeSettingPress = () => {
+    setIsTimeTouched(true);
     setIsTimePickerVisible(true);
   };
 
@@ -259,9 +270,11 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
   const handleTimePickerConfirm = (newStartTime: Time | null, newEndTime: Time | null) => {
     setStartTime(newStartTime);
     setEndTime(newEndTime);
+    setIsTimeTouched(true);
   };
 
   const handleRepeatPress = () => {
+    setIsRepeatTouched(true);
     setIsRepeatPickerVisible(true);
   };
 
@@ -272,6 +285,7 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
   const handleRepeatPickerConfirm = (option: RepeatOption | null, days: number[]) => {
     setRepeatOption(option);
     setRepeatDays(days);
+    setIsRepeatTouched(true);
   };
 
   // 반복 표시 텍스트 생성
@@ -406,7 +420,27 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
   };
 
   const handleAddPress = () => {
-    if (planTitle.trim().length === 0) {
+    const missing: Array<'title' | 'time' | 'repeat'> = [];
+    if (planTitle.trim().length === 0) missing.push('title');
+    if (startTime === null) missing.push('time');
+    if (repeatOption === null) missing.push('repeat');
+
+    if (missing.length > 0) {
+      const firstMissing = missing[0];
+      setErrorField(firstMissing);
+      setIsPlanTitleTouched(true);
+      setIsTimeTouched(true);
+      setIsRepeatTouched(true);
+
+      const y =
+        firstMissing === 'title'
+          ? fieldPositions.titleY
+          : firstMissing === 'time'
+            ? fieldPositions.timeY
+            : fieldPositions.repeatY;
+      if (y !== undefined) {
+        scrollViewRef.current?.scrollTo({ y: Math.max(y - 16, 0), animated: true });
+      }
       return;
     }
 
@@ -447,7 +481,11 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+      >
         {/* 분류 설정 */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>분류 설정</Text>
@@ -481,7 +519,7 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
 
         {/* 날짜 선택 그룹 */}
         <View style={styles.fieldGroup}>
-          <TouchableOpacity style={[styles.fieldContainer, styles.fieldFirst]} onPress={handleDatePress}>
+          <TouchableOpacity style={[styles.fieldContainer, styles.fieldSolo]} onPress={handleDatePress}>
             <View style={styles.fieldLeft}>
               <View style={styles.iconContainer}>
                 <Ionicons name="calendar-outline" size={20} color={colors.grayscale.gray700} />
@@ -537,18 +575,36 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
         />
 
         {/* 계획명 입력 그룹 */}
-        <View style={styles.planNameSection}>
+        <View
+          style={styles.planNameSection}
+          onLayout={(event) => {
+            const { layout } = event.nativeEvent;
+            setFieldPositions((prev) => ({ ...prev, titleY: layout.y }));
+          }}
+        >
           <Text style={styles.planNameLabel}>
             계획명
             <Text style={styles.requiredStar}> *</Text>
           </Text>
           <TextInput
-            style={styles.planNameInput}
+            style={[
+              styles.planNameInput,
+              errorField === 'title' && isPlanTitleTouched && planTitle.trim().length === 0 && styles.inputError,
+            ]}
             placeholder="계획의 이름을 입력해주세요."
             placeholderTextColor={colors.grayscale.gray500}
             value={planTitle}
-            onChangeText={setPlanTitle}
+            onChangeText={(text) => {
+              setPlanTitle(text);
+              if (!isPlanTitleTouched) {
+                setIsPlanTitleTouched(true);
+              }
+            }}
+            onBlur={() => setIsPlanTitleTouched(true)}
           />
+          {errorField === 'title' && isPlanTitleTouched && planTitle.trim().length === 0 && (
+            <Text style={styles.inputErrorText}>필수 기입 항목을 먼저 입력해주세요.</Text>
+          )}
         </View>
 
         {/* 중요도 설정 */}
@@ -581,33 +637,76 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
           </View>
         </View>
 
+        {/* 기본 설정 */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>기본 설정</Text>
+        </View>
+
         {/* 기본 설정 그룹 */}
         <View style={styles.fieldGroup}>
-          <TouchableOpacity style={[styles.fieldContainer, styles.fieldFirst]} onPress={handleTimeSettingPress}>
-            <View style={styles.fieldLeft}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="time-outline" size={20} color={colors.grayscale.gray700} />
+          <View
+            onLayout={(event) => {
+              const { layout } = event.nativeEvent;
+              setFieldPositions((prev) => ({ ...prev, timeY: layout.y }));
+            }}
+          >
+            <TouchableOpacity
+              style={[
+                styles.fieldContainer,
+                styles.fieldSolo,
+                errorField === 'time' && isTimeTouched && startTime === null && styles.fieldError,
+              ]}
+              onPress={handleTimeSettingPress}
+            >
+              <View style={styles.fieldLeft}>
+                <View style={styles.iconContainer}>
+                  <Ionicons name="time-outline" size={20} color={colors.grayscale.gray700} />
+                </View>
+                <Text style={styles.fieldLabel}>시간 설정</Text>
               </View>
-              <Text style={styles.fieldLabel}>시간 설정</Text>
-            </View>
-          <View style={styles.fieldRight}>
-            <Text style={styles.fieldValue}>{getTimeDisplayText()}</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.grayscale.gray300} />
+              <View style={styles.fieldRight}>
+                <Text style={styles.fieldValue}>{getTimeDisplayText()}</Text>
+                <Ionicons name="chevron-forward" size={20} color={colors.grayscale.gray300} />
+              </View>
+            </TouchableOpacity>
+            {errorField === 'time' && isTimeTouched && startTime === null && (
+              <View style={styles.inputErrorRow}>
+                <Text style={styles.inputErrorText}>필수 기입 항목을 먼저 입력해주세요.</Text>
+              </View>
+            )}
           </View>
-          </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.fieldContainer, styles.fieldLast]} onPress={handleRepeatPress}>
-            <View style={styles.fieldLeft}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="repeat-outline" size={20} color={colors.grayscale.gray700} />
+          <View
+            onLayout={(event) => {
+              const { layout } = event.nativeEvent;
+              setFieldPositions((prev) => ({ ...prev, repeatY: layout.y }));
+            }}
+          >
+            <TouchableOpacity
+              style={[
+                styles.fieldContainer,
+                styles.fieldSolo,
+                errorField === 'repeat' && isRepeatTouched && repeatOption === null && styles.fieldError,
+              ]}
+              onPress={handleRepeatPress}
+            >
+              <View style={styles.fieldLeft}>
+                <View style={styles.iconContainer}>
+                  <Ionicons name="repeat-outline" size={20} color={colors.grayscale.gray700} />
+                </View>
+                <Text style={styles.fieldLabel}>반복</Text>
               </View>
-              <Text style={styles.fieldLabel}>반복</Text>
-            </View>
-            <View style={styles.fieldRight}>
-              <Text style={styles.fieldValue}>{getRepeatDisplayText()}</Text>
-              <Ionicons name="chevron-forward" size={20} color={colors.grayscale.gray300} />
-            </View>
-          </TouchableOpacity>
+              <View style={styles.fieldRight}>
+                <Text style={styles.fieldValue}>{getRepeatDisplayText()}</Text>
+                <Ionicons name="chevron-forward" size={20} color={colors.grayscale.gray300} />
+              </View>
+            </TouchableOpacity>
+            {errorField === 'repeat' && isRepeatTouched && repeatOption === null && (
+              <View style={styles.inputErrorRow}>
+                <Text style={styles.inputErrorText}>필수 기입 항목을 먼저 입력해주세요.</Text>
+              </View>
+            )}
+          </View>
         </View>
 
         {/* 그룹 설정 */}
@@ -643,7 +742,7 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
 
           {/* 꾸미기 그룹 */}
           <View style={styles.fieldGroup}>
-            <TouchableOpacity style={[styles.fieldContainer, styles.fieldFirst]} onPress={handleColorPress}>
+            <TouchableOpacity style={[styles.fieldContainer, styles.fieldSolo]} onPress={handleColorPress}>
               <View style={styles.fieldLeft}>
                 <View style={styles.iconContainer}>
                   <Ionicons name="color-palette-outline" size={20} color={colors.grayscale.gray700} />
@@ -656,7 +755,7 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.fieldContainer, styles.fieldLast]} onPress={handleIconPress}>
+            <TouchableOpacity style={[styles.fieldContainer, styles.fieldSolo]} onPress={handleIconPress}>
               <View style={styles.fieldLeft}>
                 <View style={styles.iconContainer}>
                   <Ionicons name="happy-outline" size={20} color={colors.grayscale.gray700} />
@@ -672,7 +771,11 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
         </View>
 
         {/* 하단 추가하기 버튼 */}
-        <TouchableOpacity style={styles.addButton} onPress={handleAddPress}>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={handleAddPress}
+          activeOpacity={0.8}
+        >
           <Text style={styles.addButtonText}>
             {editingPlan ? '수정하기' : '추가하기'}
           </Text>
@@ -687,33 +790,58 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
       >
         <View style={styles.infoContent}>
           <Text style={styles.infoMainText}>
-            플래너리에서는 day, week, month에 따라 각각 다른 계획을 세울 수 있어요! 필요한 계획을 분류에 맞게 세워보세요 :)
+            플래너리에서는 day, week, month에 따라 각각 다른 계획을 세울 수 있어요! 필요한 계획을
+            분류에 맞게 세워보세요 :)
           </Text>
-          
-          <View style={styles.infoItem}>
-            <Text style={styles.infoItemTitle}>✔ DAY</Text>
-            <Text style={styles.infoItemText}>
-              특정 하루에 달성할 계획을 세워주세요.{'\n'}
-              예: 국어 문학 지문 복습하기
-            </Text>
+
+          <View style={styles.infoItemRow}>
+            <View style={styles.infoItemIcon}>
+              <Ionicons name="checkmark" size={14} color={colors.main.main} />
+            </View>
+            <View style={styles.infoItemContent}>
+              <Text style={styles.infoItemTitleText}>DAY</Text>
+              <Text style={styles.infoItemBody}>특정 하루에 달성할 계획을 세워주세요.</Text>
+              <Text style={styles.infoItemBody}>
+                <Text style={styles.infoExampleLabel}>예: </Text>
+                국어 문학 지문 복습하기
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.infoItem}>
-            <Text style={styles.infoItemTitle}>✔ WEEK</Text>
-            <Text style={styles.infoItemText}>
-              한 주 동안 달성할 계획을 세워주세요.{'\n'}
-              주의: Day에 추가했던 계획들이 합산되는 방식이 아니에요.{'\n'}
-              예: 주에 수학 모고 3개 풀고 오답노트하기
-            </Text>
+          <View style={styles.infoItemRow}>
+            <View style={styles.infoItemIcon}>
+              <Ionicons name="checkmark" size={14} color={colors.main.main} />
+            </View>
+            <View style={styles.infoItemContent}>
+              <Text style={styles.infoItemTitleText}>WEEK</Text>
+              <Text style={styles.infoItemBody}>한 주 동안 달성할 계획을 세워주세요.</Text>
+              <Text style={styles.infoItemBody}>
+                <Text style={styles.infoWarnText}>주의: </Text>
+                Day에 추가했던 계획들이 합산되는 방식이 아니에요.
+              </Text>
+              <Text style={styles.infoItemBody}>
+                <Text style={styles.infoExampleLabel}>예: </Text>
+                주에 수학 모고 3개 풀고 오답노트하기
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.infoItem}>
-            <Text style={styles.infoItemTitle}>✔ MONTH</Text>
-            <Text style={styles.infoItemText}>
-              한 달 동안 달성할 계획을 세워주세요.{'\n'}
-              주의: Day와 Week에 추가했던 계획들이 합산되는 방식이 아니에요.{'\n'}
-              예: 7월 동안 무조건 6시 30분에 기상하기
-            </Text>
+          <View style={styles.infoItemRow}>
+            <View style={styles.infoItemIcon}>
+              <Ionicons name="checkmark" size={14} color={colors.main.main} />
+            </View>
+            <View style={styles.infoItemContent}>
+              <Text style={styles.infoItemTitleText}>MONTH</Text>
+              <Text style={styles.infoItemBody}>한 달 동안 달성할 계획을 세워주세요.</Text>
+              <Text style={styles.infoItemBody}>
+                <Text style={styles.infoWarnText}>주의: </Text>
+                Day와 Week에 추가했던 계획들이 합산되는 방식이 아니에요.
+              </Text>
+              <Text style={styles.infoItemBody}>
+                <Text style={styles.infoExampleLabel}>예: </Text>
+                7월 동안 무조건 6시 30분에 기상하기
+              </Text>
+            </View>
           </View>
         </View>
       </InfoBottomSheet>
@@ -728,6 +856,10 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
           <Text style={styles.infoMainText}>
             플래너리에서는 중요한 계획을 따로 표기할 수 있어요.
           </Text>
+          <View style={styles.infoInlineRow}>
+            <Ionicons name="pricetag-outline" size={16} color={colors.main.main} />
+            <Text style={styles.infoInlineText}>중요 계획 태그를 켜서 관리해보세요.</Text>
+          </View>
           
           {/* 예시 카드 */}
           <Image
@@ -752,6 +884,12 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
           <Text style={styles.infoMainText}>
             플래너리에서는 계획을 그룹으로 간편하게 관리할 수 있어요.
           </Text>
+          <View style={styles.infoInlineRow}>
+            <Ionicons name="folder-outline" size={16} color={colors.main.main} />
+            <Text style={styles.infoInlineText}>
+              과목별/목표별로 그룹을 나누면 계획이 더 잘 보입니다.
+            </Text>
+          </View>
         </View>
       </InfoBottomSheet>
 
@@ -798,7 +936,7 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
                           >
                             <Ionicons
                               name={isGroupEditMode ? 'checkmark' : 'create-outline'}
-                              size={20}
+                              size={24}
                               color={isGroupEditMode ? colors.main.main : colors.grayscale.gray700}
                             />
                           </TouchableOpacity>
@@ -807,7 +945,7 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
                           style={styles.groupSheetActionButton}
                           onPress={closeGroupSheet}
                         >
-                          <Ionicons name="close" size={20} color={colors.grayscale.gray700} />
+                          <Ionicons name="close" size={24} color={colors.grayscale.gray700} />
                         </TouchableOpacity>
                       </View>
                     </>
@@ -819,7 +957,7 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
                           setGroupSheetView(groupSheetView === 'color' ? 'create' : 'list')
                         }
                       >
-                        <Ionicons name="arrow-back" size={20} color={colors.grayscale.gray700} />
+                        <Ionicons name="arrow-back" size={24} color={colors.grayscale.gray700} />
                       </TouchableOpacity>
                       <Text style={styles.groupSheetTitle}>
                         {groupSheetView === 'color'
@@ -832,190 +970,205 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
                         style={styles.groupSheetHeaderButton}
                         onPress={closeGroupSheet}
                       >
-                        <Ionicons name="close" size={20} color={colors.grayscale.gray700} />
+                        <Ionicons name="close" size={24} color={colors.grayscale.gray700} />
                       </TouchableOpacity>
                     </View>
                   )}
                 </View>
 
-                {groupSheetView === 'list' && (
-                  <ScrollView contentContainerStyle={styles.groupSheetList}>
-                    {groups.length === 0 ? (
-                      <View style={styles.groupSheetEmptyContainer}>
-                        <Text style={styles.groupSheetEmpty}>
-                          생성된 그룹이 없습니다.{'\n'}새로운 그룹을 만들어보세요!
-                        </Text>
-                      </View>
-                    ) : (
-                      groups.map((group) => {
-                        const isSelected = !isGroupEditMode && tempSelectedGroupId === group.id;
-                        return (
-                          <View
-                            key={group.id}
-                            style={[styles.groupSheetItem, isSelected && styles.groupSheetItemSelected]}
-                          >
-                            <TouchableOpacity
-                              style={styles.groupSheetItemContent}
-                              activeOpacity={0.8}
-                              onPress={() => {
-                                if (isGroupEditMode) {
-                                  startGroupCreate(group);
-                                  return;
-                                }
-                                setTempSelectedGroupId((prev) =>
-                                  prev === group.id ? null : group.id
-                                );
-                              }}
+                <View style={styles.groupSheetBody}>
+                  {groupSheetView === 'list' && (
+                    <ScrollView contentContainerStyle={styles.groupSheetList}>
+                      {isGroupEditMode && (
+                        <View style={styles.groupEditHint}>
+                          <Text style={styles.groupEditHintText}>
+                            수정할 그룹을 선택하면 그룹 이름과 색상을 수정할 수 있어요.
+                          </Text>
+                        </View>
+                      )}
+                      {groups.length === 0 ? (
+                        <View style={styles.groupSheetEmptyContainer}>
+                          <Text style={styles.groupSheetEmpty}>
+                            생성된 그룹이 없습니다.{'\n'}새로운 그룹을 만들어보세요!
+                          </Text>
+                        </View>
+                      ) : (
+                        groups.map((group) => {
+                          const isSelected = !isGroupEditMode && tempSelectedGroupId === group.id;
+                          return (
+                            <View
+                              key={group.id}
+                              style={[styles.groupSheetItem, isSelected && styles.groupSheetItemSelected]}
                             >
-                              <View style={[styles.groupSheetColor, { backgroundColor: group.color }]} />
-                              <Text style={styles.groupSheetName}>{group.name}</Text>
-                            </TouchableOpacity>
-                            {isGroupEditMode && (
+                              {isGroupEditMode && (
+                                <TouchableOpacity
+                                  style={styles.groupSheetDeleteButton}
+                                  onPress={() => handleGroupDelete(group.id)}
+                                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                >
+                                  <Ionicons name="remove-circle" size={26} color="#EF4444" />
+                                </TouchableOpacity>
+                              )}
                               <TouchableOpacity
-                                style={styles.groupSheetDeleteButton}
-                                onPress={() => handleGroupDelete(group.id)}
+                                style={styles.groupSheetItemContent}
+                                activeOpacity={0.8}
+                                onPress={() => {
+                                  if (isGroupEditMode) {
+                                    startGroupCreate(group);
+                                    return;
+                                  }
+                                  setTempSelectedGroupId((prev) =>
+                                    prev === group.id ? null : group.id
+                                  );
+                                }}
                               >
-                                <Ionicons name="remove-circle" size={22} color="#EF4444" />
+                                <View style={[styles.groupSheetColor, { backgroundColor: group.color }]} />
+                                <Text style={styles.groupSheetName}>{group.name}</Text>
                               </TouchableOpacity>
+                            </View>
+                          );
+                        })
+                      )}
+                    </ScrollView>
+                  )}
+
+                  {groupSheetView === 'create' && (
+                    <View style={styles.groupForm}>
+                      <View style={styles.groupFormField}>
+                        <Text style={styles.groupFormLabel}>그룹 이름</Text>
+                        <View style={styles.groupFormInputRow}>
+                          <TextInput
+                            style={styles.groupFormInput}
+                            placeholder="그룹의 이름을 입력하세요."
+                            placeholderTextColor={colors.grayscale.gray500}
+                            value={draftGroupName}
+                            onChangeText={(text) => {
+                              if (text.length <= MAX_GROUP_NAME_LENGTH) {
+                                setDraftGroupName(text);
+                              }
+                            }}
+                          />
+                          <Text style={styles.groupFormCounter}>
+                            {draftGroupName.length}/{MAX_GROUP_NAME_LENGTH}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.groupFormField}>
+                        <Text style={styles.groupFormLabel}>그룹 색상</Text>
+                        <TouchableOpacity style={styles.groupFormColor} onPress={openColorPicker}>
+                          <View style={styles.groupFormColorLeft}>
+                            <Ionicons
+                              name="color-palette-outline"
+                              size={20}
+                              color={colors.grayscale.gray700}
+                            />
+                            <Text style={styles.groupFormColorText}>색상</Text>
+                          </View>
+                          <View style={styles.groupFormColorRight}>
+                            <View
+                              style={[
+                                styles.groupFormColorPreview,
+                                { backgroundColor: draftGroupColor },
+                              ]}
+                            />
+                            <Ionicons name="chevron-forward" size={20} color={colors.grayscale.gray300} />
+                          </View>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
+
+                  {groupSheetView === 'color' && (
+                    <View style={styles.groupColor}>
+                      <View style={styles.groupColorGrid}>
+                        {Array.from({ length: 4 }).map((_, rowIndex) => (
+                          <View key={rowIndex} style={styles.groupColorRow}>
+                            {GROUP_COLORS.slice(rowIndex * 5, (rowIndex + 1) * 5).map(
+                              (color, colIndex) => {
+                                const isSelected = colorPickerTemp === color;
+                                return (
+                                  <TouchableOpacity
+                                    key={`${rowIndex}-${colIndex}`}
+                                    style={[
+                                      styles.groupColorSwatch,
+                                      isSelected && styles.groupColorSwatchSelected,
+                                      { backgroundColor: color },
+                                      colIndex < 4 && styles.groupColorSwatchMargin,
+                                    ]}
+                                    onPress={() => setColorPickerTemp(color)}
+                                  />
+                                );
+                              }
                             )}
                           </View>
-                        );
-                      })
-                    )}
-                  </ScrollView>
-                )}
-
-                {groupSheetView === 'create' && (
-                  <View style={styles.groupForm}>
-                    <View style={styles.groupFormField}>
-                      <Text style={styles.groupFormLabel}>그룹 이름</Text>
-                      <View style={styles.groupFormInputRow}>
-                        <TextInput
-                          style={styles.groupFormInput}
-                          placeholder="그룹의 이름을 입력하세요."
-                          placeholderTextColor={colors.grayscale.gray500}
-                          value={draftGroupName}
-                          onChangeText={(text) => {
-                            if (text.length <= MAX_GROUP_NAME_LENGTH) {
-                              setDraftGroupName(text);
-                            }
-                          }}
-                        />
-                        <Text style={styles.groupFormCounter}>
-                          {draftGroupName.length}/{MAX_GROUP_NAME_LENGTH}
-                        </Text>
+                        ))}
                       </View>
                     </View>
-
-                    <View style={styles.groupFormField}>
-                      <Text style={styles.groupFormLabel}>그룹 색상</Text>
-                      <TouchableOpacity style={styles.groupFormColor} onPress={openColorPicker}>
-                        <View style={styles.groupFormColorLeft}>
-                          <Ionicons
-                            name="color-palette-outline"
-                            size={20}
-                            color={colors.grayscale.gray700}
-                          />
-                          <Text style={styles.groupFormColorText}>색상</Text>
-                        </View>
-                        <View style={styles.groupFormColorRight}>
-                          <View
-                            style={[
-                              styles.groupFormColorPreview,
-                              { backgroundColor: draftGroupColor },
-                            ]}
-                          />
-                          <Ionicons name="chevron-forward" size={20} color={colors.grayscale.gray300} />
-                        </View>
-                      </TouchableOpacity>
-                    </View>
-
-                    <TouchableOpacity
-                      style={[
-                        styles.groupFormSubmit,
-                        !draftGroupName.trim() && styles.groupFormSubmitDisabled,
-                      ]}
-                      onPress={handleGroupSave}
-                      disabled={!draftGroupName.trim()}
-                    >
-                      <Text
-                        style={[
-                          styles.groupFormSubmitText,
-                          !draftGroupName.trim() && styles.groupFormSubmitTextDisabled,
-                        ]}
-                      >
-                        {draftGroupId ? '수정하기' : '추가하기'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-
-                {groupSheetView === 'color' && (
-                  <View style={styles.groupColor}>
-                    <View style={styles.groupColorGrid}>
-                      {Array.from({ length: 4 }).map((_, rowIndex) => (
-                        <View key={rowIndex} style={styles.groupColorRow}>
-                          {GROUP_COLORS.slice(rowIndex * 5, (rowIndex + 1) * 5).map(
-                            (color, colIndex) => {
-                              const isSelected = colorPickerTemp === color;
-                              return (
-                                <TouchableOpacity
-                                  key={`${rowIndex}-${colIndex}`}
-                                  style={[
-                                    styles.groupColorSwatch,
-                                    isSelected && styles.groupColorSwatchSelected,
-                                    { backgroundColor: color },
-                                    colIndex < 4 && styles.groupColorSwatchMargin,
-                                  ]}
-                                  onPress={() => setColorPickerTemp(color)}
-                                />
-                              );
-                            }
-                          )}
-                        </View>
-                      ))}
-                    </View>
-                    <TouchableOpacity
-                      style={styles.groupColorConfirm}
-                      onPress={() => {
-                        setDraftGroupColor(colorPickerTemp);
-                        setGroupSheetView('create');
-                      }}
-                    >
-                      <Text style={styles.groupColorConfirmText}>확인</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
+                  )}
+                </View>
 
                 {groupSheetView === 'list' && (
-                  <>
-                    <TouchableOpacity
-                      style={styles.groupSheetAdd}
-                      onPress={() => startGroupCreate()}
-                    >
-                      <Ionicons name="add" size={20} color={colors.grayscale.white} />
-                    </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.groupSheetAdd}
+                    onPress={() => startGroupCreate()}
+                  >
+                    <Ionicons name="add" size={20} color={colors.grayscale.white} />
+                  </TouchableOpacity>
+                )}
 
+                <View style={styles.sheetFooter}>
+                  {groupSheetView === 'list' && (
                     <TouchableOpacity
                       style={[
-                        styles.groupSheetConfirm,
-                        (!tempSelectedGroupId || isGroupEditMode) && styles.groupSheetConfirmDisabled,
+                        styles.sheetPrimaryButton,
+                        (!tempSelectedGroupId || isGroupEditMode) && styles.sheetPrimaryButtonDisabled,
                       ]}
                       onPress={handleGroupSheetConfirm}
                       disabled={!tempSelectedGroupId || isGroupEditMode}
                     >
                       <Text
                         style={[
-                          styles.groupSheetConfirmText,
+                          styles.sheetPrimaryButtonText,
                           (!tempSelectedGroupId || isGroupEditMode) &&
-                            styles.groupSheetConfirmTextDisabled,
+                            styles.sheetPrimaryButtonTextDisabled,
                         ]}
                       >
                         선택하기
                       </Text>
                     </TouchableOpacity>
-                  </>
-                )}
+                  )}
+                  {groupSheetView === 'create' && (
+                    <TouchableOpacity
+                      style={[
+                        styles.sheetPrimaryButton,
+                        !draftGroupName.trim() && styles.sheetPrimaryButtonDisabled,
+                      ]}
+                      onPress={handleGroupSave}
+                      disabled={!draftGroupName.trim()}
+                    >
+                      <Text
+                        style={[
+                          styles.sheetPrimaryButtonText,
+                          !draftGroupName.trim() && styles.sheetPrimaryButtonTextDisabled,
+                        ]}
+                      >
+                        {draftGroupId ? '수정하기' : '추가하기'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                  {groupSheetView === 'color' && (
+                    <TouchableOpacity
+                      style={styles.sheetPrimaryButton}
+                      onPress={() => {
+                        setDraftGroupColor(colorPickerTemp);
+                        setGroupSheetView('create');
+                      }}
+                    >
+                      <Text style={styles.sheetPrimaryButtonText}>확인</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
             </TouchableWithoutFeedback>
           </View>
@@ -1148,6 +1301,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderBottomWidth: 1,
   },
+  fieldSolo: {
+    borderRadius: 10,
+    marginBottom: spacing.sm,
+  },
   fieldLeft: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1219,6 +1376,22 @@ const styles = StyleSheet.create({
     borderColor: colors.grayscale.gray200,
     color: colors.grayscale.gray900,
     minHeight: 44,
+    textAlignVertical: 'center',
+    includeFontPadding: false,
+  },
+  inputError: {
+    borderColor: '#EF4444',
+  },
+  inputErrorText: {
+    ...typography.bodySmall,
+    color: '#EF4444',
+    marginTop: spacing.xs,
+  },
+  inputErrorRow: {
+    paddingHorizontal: spacing.base,
+  },
+  fieldError: {
+    borderColor: '#EF4444',
   },
   // 텍스트 입력 - iOS 스타일 (다른 곳에서 사용할 경우를 위해 유지)
   textInput: {
@@ -1299,19 +1472,52 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
     lineHeight: 22,
   },
-  infoItem: {
+  infoItemRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
     marginBottom: spacing.lg,
   },
-  infoItemTitle: {
+  infoItemIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.main.sub1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  infoItemContent: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  infoItemTitleText: {
     ...typography.bodyLarge,
     fontWeight: fontWeight.semibold,
-    color: colors.grayscale.gray900,
-    marginBottom: spacing.sm,
+    color: colors.main.main,
   },
-  infoItemText: {
+  infoItemBody: {
     ...typography.bodyMedium,
     color: colors.grayscale.gray700,
     lineHeight: 22,
+  },
+  infoExampleLabel: {
+    color: colors.grayscale.gray900,
+    fontWeight: fontWeight.semibold,
+  },
+  infoWarnText: {
+    color: '#EF4444',
+    fontWeight: fontWeight.semibold,
+  },
+  infoInlineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: -spacing.sm,
+    marginBottom: spacing.base,
+  },
+  infoInlineText: {
+    ...typography.bodyMedium,
+    color: colors.grayscale.gray700,
   },
   infoDescription: {
     ...typography.bodyMedium,
@@ -1357,8 +1563,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   groupSheetHeaderButton: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1375,8 +1581,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   groupSheetActionButton: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1384,6 +1590,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.lg,
     flexGrow: 1,
+  },
+  groupSheetBody: {
+    flex: 1,
+  },
+  groupEditHint: {
+    backgroundColor: colors.grayscale.gray50,
+    borderRadius: spacing.base,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.grayscale.gray200,
+    marginBottom: spacing.base,
+  },
+  groupEditHintText: {
+    ...typography.bodySmall,
+    color: colors.grayscale.gray700,
+    lineHeight: 18,
+    textAlign: 'center',
   },
   groupSheetEmptyContainer: {
     flex: 1,
@@ -1418,11 +1642,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   groupSheetDeleteButton: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.sm,
+    zIndex: 2,
   },
   groupSheetItemAction: {
     width: 32,
@@ -1448,10 +1673,10 @@ const styles = StyleSheet.create({
   groupSheetAdd: {
     position: 'absolute',
     right: spacing.base,
-    bottom: spacing['5xl'] + spacing['2xl'],
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    bottom: spacing['5xl'] + spacing['4xl'],
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: colors.grayscale.gray700,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1464,11 +1689,13 @@ const styles = StyleSheet.create({
   },
   groupForm: {
     flex: 1,
-    paddingHorizontal: spacing.base,
+    paddingHorizontal: 0,
     paddingVertical: spacing.lg,
+    position: 'relative',
   },
   groupFormField: {
     marginBottom: spacing.lg,
+    marginHorizontal: spacing.base,
   },
   groupFormLabel: {
     ...typography.bodyMedium,
@@ -1527,24 +1754,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.grayscale.gray200,
   },
-  groupFormSubmit: {
-    backgroundColor: colors.main.main,
-    marginTop: 'auto',
-    marginHorizontal: 0,
-    marginBottom: spacing.lg,
-    paddingVertical: spacing.base,
-    borderRadius: spacing.base,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
   groupFormSubmitDisabled: {
     backgroundColor: colors.grayscale.gray300,
-  },
-  groupFormSubmitText: {
-    ...typography.bodyLarge,
-    fontWeight: fontWeight.semibold,
-    color: colors.grayscale.white,
   },
   groupFormSubmitTextDisabled: {
     color: colors.grayscale.gray500,
@@ -1575,18 +1786,6 @@ const styles = StyleSheet.create({
   },
   groupColorSwatchMargin: {
     marginRight: spacing.md,
-  },
-  groupColorConfirm: {
-    backgroundColor: colors.main.main,
-    paddingVertical: spacing.base,
-    borderRadius: spacing.base,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  groupColorConfirmText: {
-    ...typography.bodyLarge,
-    fontWeight: fontWeight.semibold,
-    color: colors.grayscale.white,
   },
   deleteModalOverlay: {
     flex: 1,
@@ -1656,26 +1855,35 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
     color: colors.grayscale.white,
   },
-  groupSheetConfirm: {
-    backgroundColor: colors.main.main,
-    marginHorizontal: spacing.base,
-    marginTop: 'auto',
-    marginBottom: spacing.lg,
-    paddingVertical: spacing.base,
-    borderRadius: spacing.base,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   groupSheetConfirmDisabled: {
     backgroundColor: colors.grayscale.gray300,
   },
-  groupSheetConfirmText: {
+  groupSheetConfirmTextDisabled: {
+    color: colors.grayscale.gray500,
+  },
+  sheetPrimaryButton: {
+    backgroundColor: colors.main.main,
+    paddingVertical: spacing.base,
+    minHeight: 52,
+    borderRadius: spacing.base,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  sheetPrimaryButtonText: {
     ...typography.bodyLarge,
     fontWeight: fontWeight.semibold,
     color: colors.grayscale.white,
   },
-  groupSheetConfirmTextDisabled: {
+  sheetPrimaryButtonDisabled: {
+    backgroundColor: colors.grayscale.gray300,
+  },
+  sheetPrimaryButtonTextDisabled: {
     color: colors.grayscale.gray500,
+  },
+  sheetFooter: {
+    paddingHorizontal: spacing.base,
+    paddingBottom: spacing.lg,
   },
   // 예시 카드 이미지
   exampleCardImage: {

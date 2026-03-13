@@ -6,8 +6,10 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Image,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MainTabParamList } from '../types/navigation';
 import { colors, spacing, typography, fontWeight } from '../src/constants';
@@ -16,7 +18,26 @@ import { useProfile } from '../contexts/ProfileContext';
 type Props = NativeStackScreenProps<MainTabParamList, 'ProfileEdit'>;
 
 export default function ProfileEditScreen({ navigation }: Props) {
-  const { nickname, studyGoals } = useProfile();
+  const { nickname, studyGoals, profileImageUri, updateProfileImage } = useProfile();
+
+  const handlePickProfileImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('권한 필요', '사진 접근 권한을 허용해주세요.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.9,
+    });
+
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      updateProfileImage(result.assets[0].uri);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -30,10 +51,21 @@ export default function ProfileEditScreen({ navigation }: Props) {
 
       <View style={styles.profileSection}>
         <View style={styles.avatarWrapper}>
-          <Image source={require('../assets/planner_face_icon.png')} style={styles.avatar} />
-          <View style={styles.avatarBadge}>
+          <Image
+            source={
+              profileImageUri
+                ? { uri: profileImageUri }
+                : require('../assets/planner_face_icon.png')
+            }
+            style={styles.avatar}
+          />
+          <TouchableOpacity
+            style={styles.avatarBadge}
+            onPress={handlePickProfileImage}
+            activeOpacity={0.8}
+          >
             <Ionicons name="add" size={16} color={colors.grayscale.white} />
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
 

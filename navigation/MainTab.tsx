@@ -13,6 +13,7 @@ import NicknameEditScreen from '../screens/NicknameEditScreen';
 import StudyGoalSelectScreen from '../screens/StudyGoalSelectScreen';
 import PlanCreateScreen from '../screens/PlanCreateScreen';
 import GroupListScreen from '../components/GroupListScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createNativeStackNavigator<MainTabParamList>();
@@ -22,12 +23,17 @@ function HomeStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen
+        name="Notification"
+        component={NotificationsScreen}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen 
         name="PlanCreate" 
         component={PlanCreateScreen}
         options={{ 
           headerShown: true,
-          title: '새 계획 만들기',
+          title: '계획 추가',
         }}
       />
       <Stack.Screen 
