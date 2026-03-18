@@ -116,14 +116,15 @@ const styles = StyleSheet.create({
   monthGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: spacing.sm,
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.base,
   },
   monthCell: {
-    width: '25%',
+    flexBasis: '23%',
     aspectRatio: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
-    margin: spacing.xs,
+    marginBottom: spacing.sm,
     borderRadius: spacing.base,
     backgroundColor: colors.grayscale.white,
     borderWidth: 1,
