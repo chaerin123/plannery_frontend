@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from '../types/navigation';
 import { colors, spacing, typography, fontWeight } from '../src/constants';
+import ImportantTag from '../assets/important-tag.svg';
 
 type Props = BottomTabScreenProps<MainTabParamList, 'Plan'>;
 type ViewMode = 'Day' | 'Week' | 'Month';
@@ -249,11 +250,7 @@ function AchievementItemRow({ item }: { item: AchievementItem }) {
         resizeMode="contain"
       />
       {item.isImportant && (
-        <Image
-          source={require('../assets/중요1686560433.png')}
-          style={styles.importantBadge}
-          resizeMode="contain"
-        />
+        <ImportantTag width={34} height={18} style={styles.importantBadge} />
       )}
       <Text style={styles.itemText} numberOfLines={1}>
         {item.title}

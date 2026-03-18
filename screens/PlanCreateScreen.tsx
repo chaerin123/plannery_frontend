@@ -900,6 +900,7 @@ export default function PlanCreateScreen({ navigation, route }: Props) {
         onClose={() => setIsColorPickerVisible(false)}
         onConfirm={handleColorConfirm}
         title="꾸미기 색상"
+        showCheckmark={false}
       />
 
       {/* 아이콘 선택 Bottom Sheet */}

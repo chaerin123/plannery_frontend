@@ -16,6 +16,9 @@ import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from '../types/navigation';
 import { colors, spacing, typography, fontWeight } from '../src/constants';
 import CalendarIcon from '../assets/calender_icon.svg';
+import TagIcon from '../assets/mdi_tag-outline.svg';
+import PencilIcon from '../assets/mynaui_pencil.svg';
+import TrashIcon from '../assets/mynaui_trash.svg';
 import PlanCard from '../components/PlanCard';
 import { usePlan, PlanType } from '../contexts/PlanContext';
 import DatePickerBottomSheet from '../components/DatePickerBottomSheet';
@@ -333,7 +336,10 @@ export default function HomeScreen({ navigation, route }: Props) {
                         navigation.navigate('PlanCreate', { planId: plan.id });
                       }}
                     >
-                      <Text style={styles.planMenuText}>수정하기</Text>
+                      <View style={styles.planMenuItemContent}>
+                        <PencilIcon width={16} height={16} style={styles.planMenuIcon} />
+                        <Text style={styles.planMenuText}>수정하기</Text>
+                      </View>
                     </Pressable>
                     <Pressable
                       style={styles.planMenuItem}
@@ -342,7 +348,10 @@ export default function HomeScreen({ navigation, route }: Props) {
                         togglePlanImportant(plan.id);
                       }}
                     >
-                      <Text style={styles.planMenuText}>중요계획 태그</Text>
+                      <View style={styles.planMenuItemContent}>
+                        <TagIcon width={16} height={16} style={styles.planMenuIcon} />
+                        <Text style={styles.planMenuText}>중요 계획 태그</Text>
+                      </View>
                     </Pressable>
                     <Pressable
                       style={[styles.planMenuItem, styles.planMenuDelete]}
@@ -352,7 +361,10 @@ export default function HomeScreen({ navigation, route }: Props) {
                         setIsDeleteModalVisible(true);
                       }}
                     >
-                      <Text style={styles.planMenuDeleteText}>삭제하기</Text>
+                      <View style={styles.planMenuItemContent}>
+                        <TrashIcon width={16} height={16} style={styles.planMenuIconDelete} />
+                        <Text style={styles.planMenuDeleteText}>삭제하기</Text>
+                      </View>
                     </Pressable>
                   </View>
                 )}
@@ -719,6 +731,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
+  planMenuItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  planMenuIcon: {
+    opacity: 0.8,
+  },
   planMenuText: {
     ...typography.bodyMedium,
     color: colors.grayscale.gray700,
@@ -731,6 +751,9 @@ const styles = StyleSheet.create({
     ...typography.bodyMedium,
     color: colors.grayscale.gray700,
     fontWeight: fontWeight.semibold,
+  },
+  planMenuIconDelete: {
+    opacity: 0.8,
   },
   fab: {
     position: 'absolute',

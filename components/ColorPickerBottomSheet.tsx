@@ -18,6 +18,7 @@ export interface ColorPickerBottomSheetProps {
   onClose: () => void;
   onConfirm: (color: string) => void;
   title?: string; // 제목을 선택적으로 받을 수 있도록
+  showCheckmark?: boolean;
 }
 
 /**
@@ -30,6 +31,7 @@ export default function ColorPickerBottomSheet({
   onClose,
   onConfirm,
   title = '그룹 색상',
+  showCheckmark = true,
 }: ColorPickerBottomSheetProps) {
   const [tempColor, setTempColor] = React.useState(selectedColor);
 
@@ -88,7 +90,7 @@ export default function ColorPickerBottomSheet({
                             ]}
                             onPress={() => setTempColor(color)}
                           >
-                            {isSelected && (
+                            {showCheckmark && isSelected && (
                               <View style={styles.checkmark}>
                                 <Text style={styles.checkmarkText}>✓</Text>
                               </View>

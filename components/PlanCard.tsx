@@ -1,7 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography, fontWeight } from '../src/constants';
+import CheckFlowerEmpty from '../assets/check_flower _emt.svg';
+import CheckFlowerFilled from '../assets/check_flower.svg';
+import ImportantTag from '../assets/important-tag.svg';
 
 export type PlanCardStatus = 'TODO' | 'DONE';
 
@@ -33,46 +36,36 @@ export default function PlanCard({
 
       {/* 메인 컨텐츠 */}
       <View style={styles.content} collapsable={false}>
-        <View style={styles.leftSection} collapsable={false}>
-          {/* 아이콘 */}
-          <TouchableOpacity style={styles.iconButton} onPress={onStatusToggle} activeOpacity={0.7}>
-            <Image
-              source={
-                isDone
-                  ? require('../assets/체크박스Group 1437256896.png')
-                  : require('../assets/체크박스Group 1437256897.png')
-              }
-              style={styles.iconImage}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
+        <View style={styles.topRow}>
+          <View style={styles.leftInline} collapsable={false}>
+            {/* 체크 아이콘 */}
+            <TouchableOpacity style={styles.iconButton} onPress={onStatusToggle} activeOpacity={0.7}>
+              {isDone ? (
+                <CheckFlowerFilled width={24} height={24} />
+              ) : (
+                <CheckFlowerEmpty width={24} height={24} />
+              )}
+            </TouchableOpacity>
 
-          {/* 텍스트 영역 */}
-          <View style={styles.textSection} collapsable={false}>
-            {isImportant && (
-              <Image
-                source={require('../assets/중요1686560433.png')}
-                style={styles.importantTagImage}
-                resizeMode="contain"
-              />
-            )}
-            <Text
-              style={[styles.title, isDone ? styles.titleDone : null]}
-              numberOfLines={1}
-            >
-              {title}
-            </Text>
-            <View style={styles.timeRow}>
-              <Ionicons name="time-outline" size={14} color={colors.grayscale.gray500} />
-              <Text style={[styles.time, isDone ? styles.timeDone : null]}>{time}</Text>
+            {/* 중요 태그 + 계획명 */}
+            <View style={styles.titleRow} collapsable={false}>
+              {isImportant && <ImportantTag width={34} height={20} style={styles.importantTag} />}
+              <Text style={[styles.title, isDone ? styles.titleDone : null]} numberOfLines={1}>
+                {title}
+              </Text>
             </View>
           </View>
+
+          {/* 우측 옵션 메뉴 */}
+          <TouchableOpacity style={styles.menuButton} onPress={onMenuPress}>
+            <Ionicons name="ellipsis-vertical" size={20} color={colors.grayscale.gray500} />
+          </TouchableOpacity>
         </View>
 
-        {/* 우측 옵션 메뉴 */}
-        <TouchableOpacity style={styles.menuButton} onPress={onMenuPress}>
-          <Ionicons name="ellipsis-vertical" size={16} color={colors.grayscale.gray500} />
-        </TouchableOpacity>
+        <View style={styles.timeRow}>
+          <Ionicons name="time-outline" size={16} color={colors.grayscale.gray500} />
+          <Text style={[styles.time, isDone ? styles.timeDone : null]}>{time}</Text>
+        </View>
       </View>
     </View>
   );
@@ -102,38 +95,40 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    padding: spacing.md,
+  },
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: spacing.base,
   },
-  leftSection: {
+  leftInline: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    minWidth: 0,
   },
   iconButton: {
-    width: 28,
-    height: 28,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: spacing.md,
+    marginRight: spacing.sm,
   },
-  iconImage: {
-    width: 24,
-    height: 24,
-  },
-  textSection: {
+  titleRow: {
     flex: 1,
-    gap: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 0,
   },
-  importantTagImage: {
-    width: 34,
-    height: 18,
+  importantTag: {
+    marginRight: spacing.sm,
   },
   title: {
     ...typography.bodyLarge,
     color: colors.grayscale.gray900,
+    fontWeight: fontWeight.semibold,
+    flexShrink: 1,
   },
   titleDone: {
     textDecorationLine: 'line-through',
@@ -148,13 +143,15 @@ const styles = StyleSheet.create({
     color: colors.grayscale.gray300,
   },
   menuButton: {
-    padding: spacing.xs,
+    padding: spacing.sm,
     justifyContent: 'center',
     alignItems: 'center',
   },
   timeRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 0,
+    paddingLeft: 25 + spacing.sm,
   },
 });
 
